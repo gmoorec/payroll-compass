@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.21</title>
+    <title>Payroll Compass | v0.22</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.21</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.22</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -393,12 +393,12 @@
         // --- UI LOGIC ---
         function checkXIIIWindow() {
             const dateVal = document.getElementById('entryDate').value;
-            // Robust parsing: split string to avoid timezone issues
             if (!dateVal) return;
-            const [y, m, d] = dateVal.split('-').map(Number);
-            const monthIndex = m - 1; // 0-11
+            const dObj = parseDate(dateVal);
+            const m = dObj.getMonth(); // 0-11
+            const d = dObj.getDate();
             
-            const isWin = (monthIndex===3||monthIndex===7||monthIndex===11) && d<=15;
+            const isWin = (m===3||m===7||m===11) && d<=15;
             const btn = document.getElementById('btnTog_rowXIII');
             if(isWin) { btn.classList.remove('hidden-row'); } 
             else { btn.classList.add('hidden-row'); toggleRow('rowXIII', btn, false); }
@@ -538,7 +538,6 @@
 
         // --- REFRESH LOGIC ---
         function refresh() {
-            // Sort by Date using standardized parsing
             entries.sort((a,b) => parseDate(a.date) - parseDate(b.date));
 
             // Update Dec '24 from inputs
@@ -596,179 +595,152 @@
                 actSS:0, actSE:0, actISR:0, actISRG:0,
                 isrSalPaid:0, isrGrepPaid:0, 
                 seBase:0,
-                // Aggregates for Cash Flow
                 totalTax:0, totalDed:0
             };
             
-            // Chart Data Containers
-            const chartData = {
-                sal: { paid:[], leg:[], labels:[] },
-                grep: { paid:[], leg:[], labels:[] }
-            };
-
+            const chartData = { sal: { paid:[], leg:[], labels:[] }, grep: { paid:[], leg:[], labels:[] } };
             const tbody = document.querySelector('#mainTable tbody');
             tbody.innerHTML = '';
 
             entries.forEach(e => {
-                // Calculation
                 const salGross = e.base + e.qbp + e.ot + e.vac + e.xiii + e.extra;
                 const actTax = e.actSS + e.actSE + e.actISR + e.actISRGREP;
                 const otherDed = e.ins + e.loans.reduce((s,l)=>s+l.amount,0);
 
-                // Bases Accumulation
-                ytd.salBase += salGross; 
-                ytd.grepBase += e.grep;
+                ytd.salBase += salGross; ytd.grepBase += e.grep;
                 ytd.seBase += (e.base + e.ot + e.vac + e.extra); 
-                ytd.grossSal += salGross;
-                ytd.grepTotal += e.grep;
-                ytd.homeTotal += e.home;
-                
-                // Actuals Accumulation
-                ytd.actSS += e.actSS;
-                ytd.actSE += e.actSE;
-                ytd.actISR += e.actISR;
-                ytd.actISRG += e.actISRGREP;
-                
-                // Cash Flow Accumulators
-                ytd.totalTax += actTax;
-                ytd.totalDed += otherDed;
-                
-                // KPIs Trackers
-                ytd.isrSalPaid += e.actISR;
-                ytd.isrGrepPaid += e.actISRGREP;
+                ytd.grossSal += salGross; ytd.grepTotal += e.grep; ytd.homeTotal += e.home;
+                ytd.actSS += e.actSS; ytd.actSE += e.actSE; ytd.actISR += e.actISR; ytd.actISRG += e.actISRGREP;
+                ytd.totalTax += actTax; ytd.totalDed += otherDed;
+                ytd.isrSalPaid += e.actISR; ytd.isrGrepPaid += e.actISRGREP;
 
-                // Legal Calculation (For Charts/KPIs)
                 const legSalTaxTotal = getTax(ytd.salBase, RULES.ISR_SAL);
                 const legGrepTaxTotal = getTax(ytd.grepBase, RULES.ISR_GREP);
-
                 const net = (salGross + e.grep + e.home) - actTax - otherDed;
                 ytd.net += net;
 
-                // Push Chart Data
-                chartData.sal.labels.push('');
-                chartData.sal.paid.push(ytd.isrSalPaid);
-                chartData.sal.leg.push(legSalTaxTotal);
+                chartData.sal.labels.push(''); chartData.sal.paid.push(ytd.isrSalPaid); chartData.sal.leg.push(legSalTaxTotal);
+                chartData.grep.labels.push(''); chartData.grep.paid.push(ytd.isrGrepPaid); chartData.grep.leg.push(legGrepTaxTotal);
 
-                chartData.grep.labels.push('');
-                chartData.grep.paid.push(ytd.isrGrepPaid);
-                chartData.grep.leg.push(legGrepTaxTotal);
-
-                // Render Table Row
                 let tr = `<tr class="hover:bg-blue-50/30 transition border-b border-slate-50">`;
                 cols.forEach(c => {
-                    let val = '-';
-                    let css = `p-3 ${c.cls} bg-white`;
-                    
-                    // Buttons & Date
+                    let val = '-'; let css = `p-3 ${c.cls} bg-white`;
                     if(c.id==='act') val = `<button onclick="editEntry(${e.id})" class="text-blue-400 hover:text-blue-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>`;
                     else if(c.id==='date') { val = e.date; css += ' font-medium text-slate-700'; }
-                    
-                    // Period Income
                     else if(['base','qbp','ot','vac','xiii','extra'].includes(c.id)) { if(e[c.id]>0) val='$'+fmt(e[c.id]); css='p-3 text-slate-500 bg-slate-50/50'; }
                     else if(c.id==='gross') { val='$'+fmt(salGross); css='p-3 font-bold text-blue-700 border-l-2 border-r-2 border-slate-100 bg-blue-50/10'; }
                     else if(c.id==='grep') { if(e.grep>0) val='$'+fmt(e.grep); css='p-3 text-purple-700 bg-purple-50/10 border-r-2'; }
                     else if(c.id==='home') { if(e.home>0) val='$'+fmt(e.home); css='p-3 text-emerald-700 bg-emerald-50/10 border-r-2'; }
-                    
-                    // Period Taxes
                     else if(c.id==='ss') { val = `<span class="cell-val">$${fmt(e.actSS)}</span><span class="cell-pct">${pct(e.actSS, salGross)}</span>`; css='p-3 border-l-2 border-orange-100 bg-orange-50/20'; }
                     else if(c.id==='se') { val = `<span class="cell-val">$${fmt(e.actSE)}</span><span class="cell-pct">${pct(e.actSE, e.base+e.ot+e.vac+e.extra)}</span>`; css='p-3 bg-orange-50/20'; }
                     else if(c.id==='isrS') { val = `<span class="cell-val">$${fmt(e.actISR)}</span><span class="cell-pct">${pct(e.actISR, salGross)}</span>`; css='p-3 bg-orange-50/20'; }
                     else if(c.id==='isrG') { val = `<span class="cell-val">$${fmt(e.actISRGREP)}</span><span class="cell-pct">${pct(e.actISRGREP, e.grep)}</span>`; css='p-3 bg-purple-50/20'; }
-                    
-                    // Granular YTD
                     else if(c.id==='ygross') { val='$'+fmt(ytd.grossSal); css='p-3 font-bold text-slate-600 border-l-2 border-slate-200'; }
                     else if(c.id==='ygrep') { val='$'+fmt(ytd.grepTotal); css='p-3 text-slate-500'; }
-                    
                     else if(c.id==='yss') { val = `<span class="cell-val">$${fmt(ytd.actSS)}</span><span class="cell-pct">${pct(ytd.actSS, ytd.salBase)}</span>`; css='p-3 border-l-2 border-slate-200'; }
                     else if(c.id==='yse') { val = `<span class="cell-val">$${fmt(ytd.actSE)}</span><span class="cell-pct">${pct(ytd.actSE, ytd.seBase)}</span>`; css='p-3'; }
                     else if(c.id==='yisrS') { val = `<span class="cell-val">$${fmt(ytd.actISR)}</span><span class="cell-pct">${pct(ytd.actISR, ytd.salBase)}</span>`; css='p-3'; }
                     else if(c.id==='yisrG') { val = `<span class="cell-val">$${fmt(ytd.actISRG)}</span><span class="cell-pct">${pct(ytd.actISRG, ytd.grepBase)}</span>`; css='p-3'; }
-                    
                     else if(c.id==='ynet') { val='$'+fmt(ytd.net); css='p-3 font-bold text-emerald-600 border-l-2 border-slate-200'; }
-
                     tr += `<td class="${css}">${val}</td>`;
                 });
-                tr += '</tr>';
-                tbody.insertAdjacentHTML('beforeend', tr);
+                tr += '</tr>'; tbody.insertAdjacentHTML('beforeend', tr);
             });
 
-            // --- KPI 1: CASH FLOW ---
+            // --- KPI UPDATES ---
             document.getElementById('kpiCFSal').innerText = '$'+fmt(ytd.grossSal);
             document.getElementById('kpiCFGrep').innerText = '$'+fmt(ytd.grepTotal);
             document.getElementById('kpiCFHome').innerText = '$'+fmt(ytd.homeTotal);
             document.getElementById('kpiCFTotal').innerText = '$'+fmt(ytd.grossSal + ytd.grepTotal + ytd.homeTotal);
-            
             document.getElementById('kpiCFTax').innerText = '-$'+fmt(ytd.totalTax);
             document.getElementById('kpiCFDed').innerText = '-$'+fmt(ytd.totalDed);
             document.getElementById('kpiCFNet').innerText = '$'+fmt(ytd.net);
 
-            // --- KPI 2: XIII ESTIMATOR ---
-            const today = new Date();
-            // In a real app, user would likely pick the "target date" for estimation.
-            // Here we use current system date OR the editor date if set?
-            // Actually, best to base it on Editor Date to allow user to simulate "What if I am in August?"
+            // --- XIII ESTIMATOR (SMART) ---
             const editorDateVal = document.getElementById('entryDate').value;
-            let referenceDate = today;
-            if (editorDateVal) {
-                referenceDate = parseDate(editorDateVal); // Use the editor's date as the "Now" context
-            }
-
-            const year = referenceDate.getFullYear();
-            let xiiiStart, xiiiEnd;
-            let currentPeriod = "Unknown";
+            let referenceDate = new Date();
+            if (editorDateVal) referenceDate = parseDate(editorDateVal);
 
             const m = referenceDate.getMonth(); // 0-11
             const d = referenceDate.getDate();
+            const year = referenceDate.getFullYear();
             
-            // Logic:
+            let xiiiStart, xiiiEnd, currentPeriod;
             // 1st: Dec 16 (prev) - Apr 15
             // 2nd: Apr 16 - Aug 15
             // 3rd: Aug 16 - Dec 15
             if (m < 3 || (m===3 && d<=15)) {
                 currentPeriod = "APRIL (1st)";
-                xiiiStart = new Date(year-1, 11, 16); // Dec 16 prev
+                xiiiStart = new Date(year-1, 11, 16);
                 xiiiEnd = new Date(year, 3, 15);
             } else if (m < 7 || (m===7 && d<=15)) {
                 currentPeriod = "AUGUST (2nd)";
-                xiiiStart = new Date(year, 3, 16); // Apr 16
+                xiiiStart = new Date(year, 3, 16);
                 xiiiEnd = new Date(year, 7, 15);
             } else {
                 currentPeriod = "DECEMBER (3rd)";
-                xiiiStart = new Date(year, 7, 16); // Aug 16
+                xiiiStart = new Date(year, 7, 16);
                 xiiiEnd = new Date(year, 11, 15);
             }
 
             let xiiiSalSum = 0;
             let xiiiGrepSum = 0;
+            let entryCountInWindow = 0;
+            let firstEntryDate = null;
 
-            // Add Ghost Data ONLY for 1st Payment
+            // 1. Sum Actuals
             if (currentPeriod === "APRIL (1st)") {
-                xiiiSalSum += dec24Sal; 
-                xiiiGrepSum += dec24Grep;
+                xiiiSalSum += dec24Sal; xiiiGrepSum += dec24Grep;
             }
 
             entries.forEach(e => {
                 const eDate = parseDate(e.date);
                 if (eDate >= xiiiStart && eDate <= xiiiEnd) {
-                    // Sum Gross Salary (Base + OT + Vac + Extra) - Exclude QBP
                     xiiiSalSum += (e.base + e.ot + e.vac + e.extra);
                     xiiiGrepSum += e.grep;
+                    entryCountInWindow++;
+                    if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate;
                 }
             });
+
+            // 2. Smart Projection (Only for April 1st Payment)
+            // If user has NOT entered Dec '24 override, and we have sparse data
+            let isProjected = false;
+            if (currentPeriod === "APRIL (1st)" && dec24Sal === 0 && entryCountInWindow > 0) {
+                // Calculate missing days from Dec 16 to First Entry
+                // Window Start: Dec 16
+                const windowStart = new Date(year-1, 11, 16);
+                const daysDiff = (firstEntryDate - windowStart) / (1000 * 60 * 60 * 24);
+                
+                // If missing > 15 days, assume we are missing a paycheck
+                if (daysDiff > 10) {
+                    // Calculate Average Daily Income from known entries
+                    // Simplify: Average per Paycheck * (Missing Days / 15) ?
+                    // Better: Average per Paycheck * Missing Paychecks.
+                    // Approx: 15 days per paycheck.
+                    const missingChecks = Math.floor(daysDiff / 14); // conservative
+                    if (missingChecks > 0) {
+                        const avgSal = xiiiSalSum / entryCountInWindow;
+                        const avgGrep = xiiiGrepSum / entryCountInWindow;
+                        
+                        xiiiSalSum += (avgSal * missingChecks);
+                        xiiiGrepSum += (avgGrep * missingChecks);
+                        isProjected = true;
+                    }
+                }
+            }
 
             const estSalXIII = xiiiSalSum / 12;
             const estGrepXIII = xiiiGrepSum / 12;
             
             document.getElementById('kpiXIIIVal').innerText = '$'+fmt(estSalXIII);
             document.getElementById('kpiXIIIGrepVal').innerText = '$'+fmt(estGrepXIII);
-            // We removed kpiXIIIBase from UI in previous update, keeping only values
-            document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} Est.`;
+            document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} ${isProjected ? '(Projected)' : 'Est.'}`;
 
-            // --- KPI 3: DEDUCTIONS (Conditional) ---
+            // KPI 3 & 4 & 5 (Deductions/Charts) - [Same as before]
             const totalIns = entries.reduce((s,e)=>s+e.ins, 0);
             const totalLoans = entries.reduce((s,e)=>s+e.loans.reduce((l,loan)=>l+loan.amount,0), 0);
             const totalOther = totalIns + totalLoans;
-            
             const cardDed = document.getElementById('cardDed');
             if (totalOther > 0) {
                 cardDed.classList.remove('opacity-25', 'pointer-events-none');
@@ -776,11 +748,10 @@
                 document.getElementById('kpiDedLoan').innerText = '$'+fmt(totalLoans);
                 document.getElementById('kpiDedTotal').innerText = '$'+fmt(totalOther);
             } else {
-                cardDed.classList.add('opacity-25', 'pointer-events-none'); // Dim instead of hide to keep grid alignment
+                cardDed.classList.add('opacity-25', 'pointer-events-none');
                 document.getElementById('kpiDedTotal').innerText = '$0.00';
             }
 
-            // --- KPI 4: ISR SALARY ---
             const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL);
             document.getElementById('kpiSalPaidVal').innerText = '$'+fmt(ytd.isrSalPaid);
             document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase);
@@ -788,7 +759,6 @@
             document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase);
             renderMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg, (i)=>chartSalInstance=i);
 
-            // --- KPI 5: ISR GREP ---
             const cardGrep = document.getElementById('cardGrep');
             if(hasGrep) {
                 cardGrep.classList.remove('opacity-50');
@@ -798,19 +768,19 @@
                 document.getElementById('kpiGrepLegVal').innerText = '$'+fmt(legGrepTax);
                 document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase);
                 renderMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg, (i)=>chartGrepInstance=i);
-            } else {
-                cardGrep.classList.add('opacity-50');
-            }
+            } else { cardGrep.classList.add('opacity-50'); }
         }
 
         // --- UTILS ---
         function parseDate(dateStr) {
-            // Handles YYYY-MM-DD (ISO) and M/D/YYYY (Excel/CSV)
             if (!dateStr) return new Date();
+            // Handle MM/DD/YYYY (Excel/CSV default)
             if (dateStr.includes('/')) {
                 const [m, d, y] = dateStr.split('/').map(Number);
-                return new Date(y, m - 1, d, 12, 0, 0); // Noon to avoid timezone shifts
-            } else if (dateStr.includes('-')) {
+                return new Date(y, m - 1, d, 12, 0, 0); 
+            } 
+            // Handle YYYY-MM-DD (ISO)
+            else if (dateStr.includes('-')) {
                 const [y, m, d] = dateStr.split('-').map(Number);
                 return new Date(y, m - 1, d, 12, 0, 0);
             }
@@ -839,25 +809,15 @@
             setInstance(newInst);
         }
 
-        // Export/Import (Update export to include Dec24 Ghost Data if present?)
-        // For simplicity, Ghost Data is currently session-only unless we modify CSV structure.
-        // Let's keep CSV structure standard for compatibility, user re-enters Dec data if needed or we append to comments.
+        // Export/Import
         function exportCSV(){
             if(!entries.length) return alert("No Data");
             const h=['ID','Date','Base','QBP','OT','Vac','XIII','Extra','GREP','Home','SS','SE','ISR_S','ISR_G','Ins','Loans'];
-            // CHANGE: FORCE YYYY-MM-DD FORMAT
-            const r = entries.map(e => {
-                // Ensure date is standardized for CSV
+            const r=entries.map(e=> {
                 const d = parseDate(e.date);
-                const isoDate = d.toISOString().split('T')[0]; // YYYY-MM-DD
-                
-                return [
-                    e.id, 
-                    isoDate, 
-                    e.base, e.qbp, e.ot, e.vac, e.xiii, e.extra, e.grep, e.home,
-                    e.actSS, e.actSE, e.actISR, e.actISRGREP, e.ins, 
-                    e.loans.reduce((s,l)=>s+l.amount,0)
-                ];
+                // Force YYYY-MM-DD for export consistency
+                const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+                return [e.id,iso,e.base,e.qbp,e.ot,e.vac,e.xiii,e.extra,e.grep,e.home,e.actSS,e.actSE,e.actISR,e.actISRGREP,e.ins,e.loans.reduce((s,l)=>s+l.amount,0)];
             });
             const csv="data:text/csv;charset=utf-8,"+h.join(",")+"\n"+r.map(v=>v.join(",")).join("\n");
             const l=document.createElement("a"); l.href=encodeURI(csv); l.download="payroll.csv"; l.click();
