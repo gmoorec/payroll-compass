@@ -57,5 +57,5 @@ Since we don't store your data, you must manage it yourself:
 - Click Export CSV to save a .csv file to your computer.
 - Next time you visit, click Import and select that file to pick up where you left off.
 
-5. Disclaimer
+## Disclaimer
 This tool is for educational and validation purposes only. It is built based on the Panamanian Tax Code (Código Fiscal) as of 2025. While it strives for 100% accuracy, official payroll calculations may vary due to specific internal accounting practices. Always consult with HR for official disputes.
