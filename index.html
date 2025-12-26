@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.20</title>
+    <title>Payroll Compass | v0.21</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.20</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.21</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -172,7 +172,7 @@
                     </table>
                 </div>
 
-                <!-- 2. XIII ESTIMATOR (NEW) -->
+                <!-- 2. XIII ESTIMATOR (UPDATED) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col relative" id="kpiXIII">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1 flex justify-between">
                         <span>XIII Estimator</span>
@@ -188,15 +188,15 @@
                     </div>
 
                     <div class="flex-1 flex flex-col justify-center space-y-2">
-                        <div>
-                            <div class="text-[9px] text-slate-500 uppercase">Est. Next Payment</div>
-                            <div class="text-lg font-bold text-yellow-600" id="kpiXIIIVal">$0.00</div>
+                        <div class="flex justify-between items-center border-b border-dashed pb-1">
+                            <span class="text-[9px] text-slate-500 uppercase">Sal. Est.</span>
+                            <span class="text-sm font-bold text-yellow-600" id="kpiXIIIVal">$0.00</span>
                         </div>
-                        <div>
-                            <div class="text-[9px] text-slate-500 uppercase">Accumulated Base</div>
-                            <div class="text-xs font-medium text-slate-700" id="kpiXIIIBase">$0.00</div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[9px] text-slate-500 uppercase">GREP Est.</span>
+                            <span class="text-sm font-bold text-purple-600" id="kpiXIIIGrepVal">$0.00</span>
                         </div>
-                        <div class="text-[9px] text-slate-400 italic" id="kpiXIIIStatus">Calculating...</div>
+                        <div class="text-[9px] text-slate-400 italic text-right mt-1" id="kpiXIIIStatus">Calculating...</div>
                     </div>
                 </div>
 
@@ -704,12 +704,21 @@
 
             // --- KPI 2: XIII ESTIMATOR ---
             const today = new Date();
-            const year = today.getFullYear();
+            // In a real app, user would likely pick the "target date" for estimation.
+            // Here we use current system date OR the editor date if set?
+            // Actually, best to base it on Editor Date to allow user to simulate "What if I am in August?"
+            const editorDateVal = document.getElementById('entryDate').value;
+            let referenceDate = today;
+            if (editorDateVal) {
+                referenceDate = parseDate(editorDateVal); // Use the editor's date as the "Now" context
+            }
+
+            const year = referenceDate.getFullYear();
             let xiiiStart, xiiiEnd;
             let currentPeriod = "Unknown";
 
-            const m = today.getMonth(); // 0-11
-            const d = today.getDate();
+            const m = referenceDate.getMonth(); // 0-11
+            const d = referenceDate.getDate();
             
             // Logic:
             // 1st: Dec 16 (prev) - Apr 15
@@ -729,24 +738,30 @@
                 xiiiEnd = new Date(year, 11, 15);
             }
 
-            let xiiiSum = 0;
+            let xiiiSalSum = 0;
+            let xiiiGrepSum = 0;
+
             // Add Ghost Data ONLY for 1st Payment
             if (currentPeriod === "APRIL (1st)") {
-                xiiiSum += dec24Sal; 
+                xiiiSalSum += dec24Sal; 
+                xiiiGrepSum += dec24Grep;
             }
 
             entries.forEach(e => {
                 const eDate = parseDate(e.date);
                 if (eDate >= xiiiStart && eDate <= xiiiEnd) {
                     // Sum Gross Salary (Base + OT + Vac + Extra) - Exclude QBP
-                    xiiiSum += (e.base + e.ot + e.vac + e.extra);
+                    xiiiSalSum += (e.base + e.ot + e.vac + e.extra);
+                    xiiiGrepSum += e.grep;
                 }
             });
 
-            const estimatedXIII = xiiiSum / 12;
+            const estSalXIII = xiiiSalSum / 12;
+            const estGrepXIII = xiiiGrepSum / 12;
             
-            document.getElementById('kpiXIIIVal').innerText = '$'+fmt(estimatedXIII);
-            document.getElementById('kpiXIIIBase').innerText = '$'+fmt(xiiiSum);
+            document.getElementById('kpiXIIIVal').innerText = '$'+fmt(estSalXIII);
+            document.getElementById('kpiXIIIGrepVal').innerText = '$'+fmt(estGrepXIII);
+            // We removed kpiXIIIBase from UI in previous update, keeping only values
             document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} Est.`;
 
             // --- KPI 3: DEDUCTIONS (Conditional) ---
