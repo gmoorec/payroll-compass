@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.15</title>
+    <title>Payroll Compass | v0.16</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.15</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.16</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -190,12 +190,12 @@
                              <div>
                                 <div class="text-[9px] text-red-500 font-bold uppercase">Paid</div>
                                 <div id="kpiSalPaidVal" class="text-xs font-bold">$0.00</div>
-                                <div id="kpiSalPaidRate" class="text-[9px] text-slate-400">0%</div>
+                                <div id="kpiSalPaidRate" class="text-[9px] text-slate-400">0.00%</div>
                              </div>
                              <div>
                                 <div class="text-[9px] text-emerald-500 font-bold uppercase">Legal</div>
                                 <div id="kpiSalLegVal" class="text-xs font-bold">$0.00</div>
-                                <div id="kpiSalLegRate" class="text-[9px] text-slate-400">0%</div>
+                                <div id="kpiSalLegRate" class="text-[9px] text-slate-400">0.00%</div>
                              </div>
                         </div>
                         <div class="w-1/2 h-full relative" style="min-height: 80px;">
@@ -212,12 +212,12 @@
                              <div>
                                 <div class="text-[9px] text-red-500 font-bold uppercase">Paid</div>
                                 <div id="kpiGrepPaidVal" class="text-xs font-bold">$0.00</div>
-                                <div id="kpiGrepPaidRate" class="text-[9px] text-slate-400">0%</div>
+                                <div id="kpiGrepPaidRate" class="text-[9px] text-slate-400">0.00%</div>
                              </div>
                              <div>
                                 <div class="text-[9px] text-emerald-500 font-bold uppercase">Legal</div>
                                 <div id="kpiGrepLegVal" class="text-xs font-bold">$0.00</div>
-                                <div id="kpiGrepLegRate" class="text-[9px] text-slate-400">0%</div>
+                                <div id="kpiGrepLegRate" class="text-[9px] text-slate-400">0.00%</div>
                              </div>
                         </div>
                         <div class="w-1/2 h-full relative" style="min-height: 80px;">
@@ -300,7 +300,7 @@
     <script>
         // --- HELPERS ---
         const fmt = n => n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        const pct = (n, d) => d > 0 ? ((n/d)*100).toFixed(1) + '%' : '0.0%';
+        const pct = (n, d) => d > 0 ? ((n/d)*100).toFixed(2) + '%' : '0.00%';
 
         // --- CONFIG ---
         let entries = [];
