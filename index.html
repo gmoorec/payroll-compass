@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.19</title>
+    <title>Payroll Compass | v0.20</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.19</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.20</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -830,7 +830,20 @@
         function exportCSV(){
             if(!entries.length) return alert("No Data");
             const h=['ID','Date','Base','QBP','OT','Vac','XIII','Extra','GREP','Home','SS','SE','ISR_S','ISR_G','Ins','Loans'];
-            const r=entries.map(e=>[e.id,e.date,e.base,e.qbp,e.ot,e.vac,e.xiii,e.extra,e.grep,e.home,e.actSS,e.actSE,e.actISR,e.actISRGREP,e.ins,e.loans.reduce((s,l)=>s+l.amount,0)]);
+            // CHANGE: FORCE YYYY-MM-DD FORMAT
+            const r = entries.map(e => {
+                // Ensure date is standardized for CSV
+                const d = parseDate(e.date);
+                const isoDate = d.toISOString().split('T')[0]; // YYYY-MM-DD
+                
+                return [
+                    e.id, 
+                    isoDate, 
+                    e.base, e.qbp, e.ot, e.vac, e.xiii, e.extra, e.grep, e.home,
+                    e.actSS, e.actSE, e.actISR, e.actISRGREP, e.ins, 
+                    e.loans.reduce((s,l)=>s+l.amount,0)
+                ];
+            });
             const csv="data:text/csv;charset=utf-8,"+h.join(",")+"\n"+r.map(v=>v.join(",")).join("\n");
             const l=document.createElement("a"); l.href=encodeURI(csv); l.download="payroll.csv"; l.click();
         }
