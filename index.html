@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.14</title>
+    <title>Payroll Compass | v0.15</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.14</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.15</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -101,10 +101,10 @@
                         <div id="rowXIII" class="hidden-row flex justify-between items-center bg-yellow-50 p-1 rounded"><label class="text-xs font-bold text-yellow-700">XIII Mes</label><input type="number" id="inpXIII" oninput="calcTotal()" class="w-24 text-right border border-yellow-200 text-sm" placeholder="0.00"></div>
                         <div id="rowExtra" class="flex justify-between items-center"><label class="text-xs font-medium text-slate-400">Extra/Misc</label><input type="number" id="inpExtra" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         
-                        <!-- SALARY GROSS MOVED HERE -->
+                        <!-- SALARY GROSS -->
                         <div class="flex justify-between items-center pt-2 border-t mt-2 mb-2">
                             <span class="text-xs font-bold text-slate-500">SALARY GROSS</span>
-                            <span id="dispTotal" class="font-bold text-lg text-blue-700">$0.00</span>
+                            <span id="dispSalTotal" class="font-bold text-lg text-blue-700">$0.00</span>
                         </div>
 
                         <!-- GREP / HOME (Excluded from Gross) -->
@@ -112,16 +112,27 @@
                         <div class="flex justify-between items-center pt-1"><label class="text-xs font-medium text-emerald-600">Home Stipend</label><input type="number" id="inpHome" value="50.00" oninput="calcTotal()" class="w-24 text-right border border-emerald-100 text-sm" placeholder="0.00"></div>
                     </div>
                     
+                    <!-- NEW: TOTAL EARNINGS -->
+                    <div class="flex justify-between items-center pt-2 border-t mt-2">
+                        <span class="text-xs font-bold text-slate-800">TOTAL EARNINGS</span>
+                        <span id="dispTotalEarnings" class="font-bold text-lg text-slate-800">$0.00</span>
+                    </div>
                 </div>
 
                 <!-- Taxes -->
                 <div class="space-y-3 pt-2">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Taxes (Actual)</span>
                     <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block text-[10px] text-slate-500 mb-0.5">S.S.</label><input type="number" id="actSS" class="w-full text-right border rounded px-2 py-1 text-xs"></div>
-                        <div><label class="block text-[10px] text-slate-500 mb-0.5">S.E.</label><input type="number" id="actSE" class="w-full text-right border rounded px-2 py-1 text-xs"></div>
-                        <div><label class="block text-[10px] text-slate-500 mb-0.5">ISR Salary</label><input type="number" id="actISR" class="w-full text-right border rounded px-2 py-1 text-xs"></div>
-                        <div id="taxRowGREP" class="hidden-row"><label class="block text-[10px] text-purple-600 mb-0.5">ISR GREP</label><input type="number" id="actISRGREP" class="w-full text-right border rounded px-2 py-1 text-xs bg-purple-50"></div>
+                        <div><label class="block text-[10px] text-slate-500 mb-0.5">S.S.</label><input type="number" id="actSS" oninput="calcTotal()" class="w-full text-right border rounded px-2 py-1 text-xs"></div>
+                        <div><label class="block text-[10px] text-slate-500 mb-0.5">S.E.</label><input type="number" id="actSE" oninput="calcTotal()" class="w-full text-right border rounded px-2 py-1 text-xs"></div>
+                        <div><label class="block text-[10px] text-slate-500 mb-0.5">ISR Salary</label><input type="number" id="actISR" oninput="calcTotal()" class="w-full text-right border rounded px-2 py-1 text-xs"></div>
+                        <div id="taxRowGREP" class="hidden-row"><label class="block text-[10px] text-purple-600 mb-0.5">ISR GREP</label><input type="number" id="actISRGREP" oninput="calcTotal()" class="w-full text-right border rounded px-2 py-1 text-xs bg-purple-50"></div>
+                    </div>
+                    
+                    <!-- NEW: TOTAL TAXES -->
+                    <div class="flex justify-between items-center pt-2 border-t mt-2">
+                        <span class="text-xs font-bold text-slate-500">TOTAL TAXES</span>
+                        <span id="dispTotalTaxes" class="font-bold text-base text-red-600">$0.00</span>
                     </div>
                 </div>
 
@@ -298,6 +309,7 @@
         let chartGrepInstance = null;
         
         const SALARY_IDS = ['inpBase','inpQBP','inpOT','inpVac','inpXIII','inpExtra'];
+        const TAX_IDS = ['actSS','actSE','actISR','actISRGREP'];
         const RULES = {
             SS: 0.0975, SS_XIII: 0.0725, SE: 0.0125,
             ISR_SAL: [{t:0,r:0}, {t:11000,r:0.15}, {t:50000,r:0.25}],
@@ -338,12 +350,29 @@
         }
 
         function calcTotal() {
-            let sum = 0;
+            let sumSal = 0;
             SALARY_IDS.forEach(id => {
                 const el = document.getElementById(id);
-                if(el && !el.closest('.hidden-row')) sum += parseFloat(el.value||0);
+                if(el && !el.closest('.hidden-row')) sumSal += parseFloat(el.value||0);
             });
-            document.getElementById('dispTotal').innerText = '$'+fmt(sum);
+            document.getElementById('dispSalTotal').innerText = '$'+fmt(sumSal);
+
+            // TOTAL EARNINGS (Sal + GREP + Home)
+            let sumGrep = 0, sumHome = 0;
+            const grepEl = document.getElementById('inpGREP');
+            if(grepEl && !grepEl.closest('.hidden-row')) sumGrep = parseFloat(grepEl.value||0);
+            const homeEl = document.getElementById('inpHome');
+            if(homeEl) sumHome = parseFloat(homeEl.value||0);
+            
+            document.getElementById('dispTotalEarnings').innerText = '$'+fmt(sumSal + sumGrep + sumHome);
+
+            // TOTAL TAXES
+            let sumTax = 0;
+            TAX_IDS.forEach(id => {
+                const el = document.getElementById(id);
+                if(el && !el.closest('.hidden-row')) sumTax += parseFloat(el.value||0);
+            });
+            document.getElementById('dispTotalTaxes').innerText = '$'+fmt(sumTax);
         }
 
         function addLoan(name='', amt='') {
