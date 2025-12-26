@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.23</title>
+    <title>Payroll Compass | v0.24</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,6 +33,7 @@
         .head-grep { background-color: #f5f3ff; color: #5b21b6; border-bottom: 2px solid #ddd6fe; }
         .head-home { background-color: #f0fdf4; color: #15803d; border-bottom: 2px solid #bbf7d0; }
         .head-tax { background-color: #fff7ed; color: #9a3412; border-bottom: 2px solid #fed7aa; }
+        .head-ded { background-color: #fef2f2; color: #991b1b; border-bottom: 2px solid #fecaca; }
         .head-ytd { background-color: #f1f5f9; color: #475569; border-bottom: 2px solid #cbd5e1; }
         .head-fix { background-color: #ffffff; color: #334155; border-bottom: 2px solid #e2e8f0; }
 
@@ -40,7 +41,7 @@
         .modal-bg { background-color: rgba(0, 0, 0, 0.5); }
         
         /* Edit Mode Highlight */
-        .editing-row { background-color: #fef9c3 !important; } /* Yellow-50 */
+        .editing-row { background-color: #fef9c3 !important; }
     </style>
 </head>
 <body class="text-slate-800 h-screen flex flex-col relative">
@@ -50,7 +51,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.23</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.24</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -139,18 +140,33 @@
                     </div>
                 </div>
 
-                <!-- Other -->
+                <!-- Other Deductions -->
                 <div class="space-y-2 pt-2">
-                    <div class="flex justify-between">
+                    <div class="flex justify-between items-center">
                          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deductions</span>
-                         <button onclick="addLoan()" class="text-[10px] text-blue-500 hover:underline">+ Loan</button>
+                         <!-- New Loan Toggle Menu -->
+                         <div class="flex space-x-1">
+                             <button onclick="toggleRow('rowLoan1', this)" id="btnTog_rowLoan1" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L1</button>
+                             <button onclick="toggleRow('rowLoan2', this)" id="btnTog_rowLoan2" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L2</button>
+                             <button onclick="toggleRow('rowLoan3', this)" id="btnTog_rowLoan3" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L3</button>
+                             <button onclick="toggleRow('rowLoan4', this)" id="btnTog_rowLoan4" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L4</button>
+                             <button onclick="toggleRow('rowLoan5', this)" id="btnTog_rowLoan5" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L5</button>
+                         </div>
                     </div>
-                    <div id="loanContainer" class="space-y-1">
+                    
+                    <div class="space-y-1">
                         <div class="flex justify-between items-center"><label class="text-xs text-slate-600">Insurance</label><input type="number" id="inpIns" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        
+                        <!-- Fixed 5 Loans -->
+                        <div id="rowLoan1" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 1</label><input type="number" id="inpLoan1" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        <div id="rowLoan2" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 2</label><input type="number" id="inpLoan2" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        <div id="rowLoan3" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 3</label><input type="number" id="inpLoan3" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        <div id="rowLoan4" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 4</label><input type="number" id="inpLoan4" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        <div id="rowLoan5" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 5</label><input type="number" id="inpLoan5" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
                     </div>
                 </div>
 
-                <!-- Action Buttons Area -->
+                <!-- Action Buttons -->
                 <div class="mt-4 flex space-x-2">
                     <button id="btnCommit" onclick="commit()" class="flex-1 bg-slate-800 text-white font-bold py-3 rounded shadow hover:bg-slate-900 transition mt-4">Add Pay Stub</button>
                     <button id="btnCancel" onclick="cancelEdit()" class="hidden-row flex-none bg-red-100 text-red-600 font-bold py-3 px-4 rounded shadow hover:bg-red-200 transition mt-4">Cancel</button>
@@ -179,7 +195,7 @@
                     </table>
                 </div>
 
-                <!-- 2. XIII ESTIMATOR (SMART) -->
+                <!-- 2. XIII ESTIMATOR -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col relative" id="kpiXIII">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1 flex justify-between">
                         <span>XIII Estimator</span>
@@ -287,7 +303,7 @@
 
     <!-- === MODAL: ABOUT === -->
     <div id="aboutModal" class="hidden-row fixed inset-0 z-50 flex items-center justify-center modal-bg px-4">
-        <!-- Content same as previous, omitted for brevity but preserved in structure -->
+        <!-- Content preserved -->
         <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
             <button onclick="toggleModal('aboutModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -312,21 +328,14 @@
 
         // --- CONFIG ---
         let entries = [];
-        let loanCount = 0;
         let chartSalInstance = null;
         let chartGrepInstance = null;
-        let editingId = null; // Track ID being edited
+        let editingId = null;
         
         const SALARY_IDS = ['inpBase','inpQBP','inpOT','inpVac','inpXIII','inpExtra'];
         const TAX_IDS = ['actSS','actSE','actISR','actISRGREP'];
-        const RULES = {
-            SS: 0.0975, SS_XIII: 0.0725, SE: 0.0125,
-            ISR_SAL: [{t:0,r:0}, {t:11000,r:0.15}, {t:50000,r:0.25}],
-            ISR_GREP: [{t:0,r:0.10}, {t:25000,r:0.15}]
-        };
-
-        let dec24Sal = 0;
-        let dec24Grep = 0;
+        const RULES = { SS: 0.0975, SS_XIII: 0.0725, SE: 0.0125, ISR_SAL: [{t:0,r:0}, {t:11000,r:0.15}, {t:50000,r:0.25}], ISR_GREP: [{t:0,r:0.10}, {t:25000,r:0.15}] };
+        let dec24Sal = 0; let dec24Grep = 0;
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('entryDate').valueAsDate = new Date();
@@ -338,12 +347,10 @@
             const dateVal = document.getElementById('entryDate').value;
             if (!dateVal) return;
             const dObj = parseDate(dateVal);
-            const m = dObj.getMonth();
-            const d = dObj.getDate();
+            const m = dObj.getMonth(); const d = dObj.getDate();
             const isWin = (m===3||m===7||m===11) && d<=15;
             const btn = document.getElementById('btnTog_rowXIII');
-            if(isWin) { btn.classList.remove('hidden-row'); } 
-            else { btn.classList.add('hidden-row'); toggleRow('rowXIII', btn, false); }
+            if(isWin) { btn.classList.remove('hidden-row'); } else { btn.classList.add('hidden-row'); toggleRow('rowXIII', btn, false); }
         }
 
         function toggleRow(rowId, btn, force) {
@@ -359,58 +366,30 @@
                 el.classList.add('hidden-row');
                 btn.classList.remove('ring-2','ring-blue-300','bg-blue-50','text-blue-600','border-blue-300');
                 if(rowId === 'rowGREP') document.getElementById('taxRowGREP').classList.add('hidden-row');
-                document.querySelector(`#${rowId} input`).value = '';
+                if(el.querySelector('input')) el.querySelector('input').value = '';
             }
             calcTotal();
         }
 
         function calcTotal() {
-            let sumSal = 0;
-            SALARY_IDS.forEach(id => {
-                const el = document.getElementById(id);
-                if(el && !el.closest('.hidden-row')) sumSal += parseFloat(el.value||0);
-            });
+            let sumSal = 0; SALARY_IDS.forEach(id => { const el = document.getElementById(id); if(el && !el.closest('.hidden-row')) sumSal += parseFloat(el.value||0); });
             document.getElementById('dispSalTotal').innerText = '$'+fmt(sumSal);
 
             let sumGrep = 0, sumHome = 0;
-            const grepEl = document.getElementById('inpGREP');
-            if(grepEl && !grepEl.closest('.hidden-row')) sumGrep = parseFloat(grepEl.value||0);
-            const homeEl = document.getElementById('inpHome');
-            if(homeEl) sumHome = parseFloat(homeEl.value||0);
+            const grepEl = document.getElementById('inpGREP'); if(grepEl && !grepEl.closest('.hidden-row')) sumGrep = parseFloat(grepEl.value||0);
+            const homeEl = document.getElementById('inpHome'); if(homeEl) sumHome = parseFloat(homeEl.value||0);
             document.getElementById('dispTotalEarnings').innerText = '$'+fmt(sumSal + sumGrep + sumHome);
 
-            let sumTax = 0;
-            TAX_IDS.forEach(id => {
-                const el = document.getElementById(id);
-                if(el && !el.closest('.hidden-row')) sumTax += parseFloat(el.value||0);
-            });
+            let sumTax = 0; TAX_IDS.forEach(id => { const el = document.getElementById(id); if(el && !el.closest('.hidden-row')) sumTax += parseFloat(el.value||0); });
             document.getElementById('dispTotalTaxes').innerText = '$'+fmt(sumTax);
         }
 
-        function addLoan(name='', amt='') {
-            loanCount++;
-            const div = document.createElement('div');
-            div.className = "flex justify-between items-center fade-in loan-row";
-            div.innerHTML = `<input type="text" class="l-name w-20 text-[10px] border-b outline-none" placeholder="Name" value="${name}"><input type="number" class="l-amt w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00" value="${amt}">`;
-            document.getElementById('loanContainer').appendChild(div);
-        }
-
-        function toggleModal(modalID) {
-            const m = document.getElementById(modalID);
-            m.classList.contains('hidden-row') ? (m.classList.remove('hidden-row'), m.classList.add('flex')) : (m.classList.add('hidden-row'), m.classList.remove('flex'));
-        }
+        function toggleModal(modalID) { const m = document.getElementById(modalID); m.classList.contains('hidden-row') ? (m.classList.remove('hidden-row'), m.classList.add('flex')) : (m.classList.add('hidden-row'), m.classList.remove('flex')); }
         function toggleDecInput() { const c=document.getElementById('xiiiConfig'); c.classList.contains('hidden-row')?c.classList.remove('hidden-row'):c.classList.add('hidden-row'); }
 
         // --- MATH ---
         function getTax(inc, brackets) {
-            let t=0;
-            for(let i=brackets.length-1; i>=0; i--) {
-                if(inc > brackets[i].t) {
-                    t += (inc - brackets[i].t)*brackets[i].r;
-                    inc = brackets[i].t;
-                }
-            }
-            return t;
+            let t=0; for(let i=brackets.length-1; i>=0; i--) { if(inc > brackets[i].t) { t += (inc - brackets[i].t)*brackets[i].r; inc = brackets[i].t; } } return t;
         }
 
         // --- ACTIONS ---
@@ -420,155 +399,109 @@
             if(!date) return alert("Date required");
 
             const entry = {
-                id: editingId ? editingId : generateID(), // Use existing ID if editing, else new
+                id: editingId ? editingId : generateID(),
                 date,
                 base: val('inpBase'), qbp: val('inpQBP'), ot: val('inpOT'), vac: val('inpVac'),
                 xiii: val('inpXIII'), extra: val('inpExtra'), grep: val('inpGREP'), home: val('inpHome'),
-                actSS: parseFloat(document.getElementById('actSS').value||0),
-                actSE: parseFloat(document.getElementById('actSE').value||0),
-                actISR: parseFloat(document.getElementById('actISR').value||0),
-                actISRGREP: parseFloat(document.getElementById('actISRGREP').value||0),
+                actSS: parseFloat(document.getElementById('actSS').value||0), actSE: parseFloat(document.getElementById('actSE').value||0),
+                actISR: parseFloat(document.getElementById('actISR').value||0), actISRGREP: parseFloat(document.getElementById('actISRGREP').value||0),
                 ins: parseFloat(document.getElementById('inpIns').value||0),
-                loans: []
+                // FIXED 5 LOAN SLOTS
+                loan1: val('inpLoan1'), loan2: val('inpLoan2'), loan3: val('inpLoan3'), loan4: val('inpLoan4'), loan5: val('inpLoan5')
             };
             
-            document.querySelectorAll('.loan-row').forEach(r => {
-                const n = r.querySelector('.l-name').value;
-                const a = parseFloat(r.querySelector('.l-amt').value||0);
-                if(a>0) entry.loans.push({name:n, amount:a});
-            });
-
-            if(editingId) {
-                // Update existing
-                const idx = entries.findIndex(e => e.id === editingId);
-                if(idx !== -1) entries[idx] = entry;
-                cancelEdit(); // Reset UI
-            } else {
-                // Add new
-                entries.push(entry);
-            }
-
+            if(editingId) { const idx = entries.findIndex(e => e.id === editingId); if(idx !== -1) entries[idx] = entry; cancelEdit(); } 
+            else { entries.push(entry); }
             refresh();
         }
 
         function editEntry(id) {
-            const e = entries.find(x => x.id === id);
-            if(!e) return;
-            
-            // Set Global Edit ID
+            const e = entries.find(x => x.id === id); if(!e) return;
             editingId = id;
+            const btn = document.getElementById('btnCommit'); btn.innerText = "Update Pay Stub"; btn.classList.remove('bg-slate-800','hover:bg-slate-900'); btn.classList.add('bg-blue-600','hover:bg-blue-700');
+            document.getElementById('btnCancel').classList.remove('hidden-row'); document.getElementById('editorTitle').innerText = "Editing Entry...";
 
-            // UI Feedback
-            const btn = document.getElementById('btnCommit');
-            btn.innerText = "Update Pay Stub";
-            btn.classList.remove('bg-slate-800', 'hover:bg-slate-900');
-            btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            document.getElementById('btnCancel').classList.remove('hidden-row');
-            document.getElementById('editorTitle').innerText = "Editing Entry...";
-
-            // Populate Fields
-            document.getElementById('entryDate').value = e.date;
-            checkXIIIWindow();
+            document.getElementById('entryDate').value = e.date; checkXIIIWindow();
             const set = (id,v) => document.getElementById(id).value = v;
             set('inpBase',e.base); set('inpQBP',e.qbp); set('inpOT',e.ot); set('inpVac',e.vac);
             set('inpXIII',e.xiii); set('inpExtra',e.extra); set('inpGREP',e.grep); set('inpHome',e.home);
             set('actSS',e.actSS); set('actSE',e.actSE); set('actISR',e.actISR); set('actISRGREP',e.actISRGREP); set('inpIns',e.ins);
+            // Loans
+            set('inpLoan1', e.loan1); set('inpLoan2', e.loan2); set('inpLoan3', e.loan3); set('inpLoan4', e.loan4); set('inpLoan5', e.loan5);
 
             const t = (rid, bid, v) => toggleRow(rid, document.getElementById(bid), v>0);
-            t('rowQBP','btnTog_rowQBP',e.qbp); t('rowOT','btnTog_rowOT',e.ot);
-            t('rowVac','btnTog_rowVac',e.vac); t('rowXIII','btnTog_rowXIII',e.xiii);
-            t('rowGREP','btnTog_rowGREP',e.grep);
+            t('rowQBP','btnTog_rowQBP',e.qbp); t('rowOT','btnTog_rowOT',e.ot); t('rowVac','btnTog_rowVac',e.vac); t('rowXIII','btnTog_rowXIII',e.xiii); t('rowGREP','btnTog_rowGREP',e.grep);
+            // Loan Toggles
+            t('rowLoan1','btnTog_rowLoan1',e.loan1); t('rowLoan2','btnTog_rowLoan2',e.loan2); t('rowLoan3','btnTog_rowLoan3',e.loan3); t('rowLoan4','btnTog_rowLoan4',e.loan4); t('rowLoan5','btnTog_rowLoan5',e.loan5);
 
-            document.getElementById('loanContainer').innerHTML = `<div class="flex justify-between items-center"><label class="text-xs text-slate-600">Insurance</label><input type="number" id="inpIns" class="w-20 text-right border rounded px-1 py-0.5 text-xs" value="${e.ins}"></div>`;
-            e.loans.forEach(l => addLoan(l.name, l.amount));
-            
-            calcTotal();
-            refresh(); // Re-render table to show highlight
+            calcTotal(); refresh();
         }
 
         function cancelEdit() {
-            editingId = null;
-            document.getElementById('editorTitle').innerText = "Editor";
-            const btn = document.getElementById('btnCommit');
-            btn.innerText = "Add Pay Stub";
-            btn.classList.add('bg-slate-800', 'hover:bg-slate-900');
-            btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            editingId = null; document.getElementById('editorTitle').innerText = "Editor";
+            const btn = document.getElementById('btnCommit'); btn.innerText = "Add Pay Stub"; btn.classList.add('bg-slate-800','hover:bg-slate-900'); btn.classList.remove('bg-blue-600','hover:bg-blue-700');
             document.getElementById('btnCancel').classList.add('hidden-row');
-            
-            // Clear inputs logic could go here, or just leave as is for rapid entry
             refresh();
         }
 
         function deleteEntry(id) {
             if(confirm("Delete this entry permanently?")) {
                 const idx = entries.findIndex(e => e.id === id);
-                if(idx !== -1) {
-                    entries.splice(idx, 1);
-                    if(editingId === id) cancelEdit(); // Cancel edit if we deleted the row being edited
-                    refresh();
-                }
+                if(idx !== -1) { entries.splice(idx, 1); if(editingId === id) cancelEdit(); refresh(); }
             }
         }
 
         // --- REFRESH LOGIC ---
         function refresh() {
             entries.sort((a,b) => parseDate(a.date) - parseDate(b.date));
-            dec24Sal = parseFloat(document.getElementById('inpDec24Sal').value || 0);
-            dec24Grep = parseFloat(document.getElementById('inpDec24Grep').value || 0);
+            dec24Sal = parseFloat(document.getElementById('inpDec24Sal').value || 0); dec24Grep = parseFloat(document.getElementById('inpDec24Grep').value || 0);
 
-            // ... [Column & Aggregator Logic Identical to v0.22] ...
-            const sums = { qbp:0, ot:0, vac:0, xiii:0, extra:0, grep:0, home:0 };
+            // Column Config
+            const sums = { qbp:0, ot:0, vac:0, xiii:0, extra:0, grep:0, home:0, l1:0, l2:0, l3:0, l4:0, l5:0 };
             let hasGrep = false;
             entries.forEach(e => {
-                sums.qbp+=e.qbp; sums.ot+=e.ot; sums.vac+=e.vac; sums.xiii+=e.xiii; 
-                sums.extra+=e.extra; sums.grep+=e.grep; sums.home+=e.home;
+                sums.qbp+=e.qbp; sums.ot+=e.ot; sums.vac+=e.vac; sums.xiii+=e.xiii; sums.extra+=e.extra; sums.grep+=e.grep; sums.home+=e.home;
+                sums.l1+=e.loan1; sums.l2+=e.loan2; sums.l3+=e.loan3; sums.l4+=e.loan4; sums.l5+=e.loan5;
                 if(e.grep > 0) hasGrep = true;
             });
 
             const cols = [
-                {id:'act', lbl:'', cls:'head-fix sticky-col'},
-                {id:'date', lbl:'Date', cls:'head-fix sticky-col pl-8'},
+                {id:'act', lbl:'', cls:'head-fix sticky-col'}, {id:'date', lbl:'Date', cls:'head-fix sticky-col pl-8'},
                 {id:'base', lbl:'Base', cls:'head-inc'},
-                ...(sums.qbp>0 ? [{id:'qbp',lbl:'QBP',cls:'head-inc'}] : []),
-                ...(sums.ot>0 ? [{id:'ot',lbl:'OT',cls:'head-inc'}] : []),
-                ...(sums.vac>0 ? [{id:'vac',lbl:'Vac',cls:'head-inc'}] : []),
-                ...(sums.xiii>0 ? [{id:'xiii',lbl:'XIII',cls:'head-inc'}] : []),
+                ...(sums.qbp>0 ? [{id:'qbp',lbl:'QBP',cls:'head-inc'}] : []), ...(sums.ot>0 ? [{id:'ot',lbl:'OT',cls:'head-inc'}] : []),
+                ...(sums.vac>0 ? [{id:'vac',lbl:'Vac',cls:'head-inc'}] : []), ...(sums.xiii>0 ? [{id:'xiii',lbl:'XIII',cls:'head-inc'}] : []),
                 ...(sums.extra>0 ? [{id:'extra',lbl:'Extra',cls:'head-inc'}] : []),
                 {id:'gross', lbl:'Gross Salary', cls:'head-inc font-bold border-l-2 border-r-2'},
-                ...(sums.grep>0 ? [{id:'grep',lbl:'GREP',cls:'head-grep border-r-2'}] : []),
-                ...(sums.home>0 ? [{id:'home',lbl:'Home',cls:'head-home border-r-2'}] : []),
-                {id:'ss', lbl:'SS', cls:'head-tax border-l-2'},
-                {id:'se', lbl:'SE', cls:'head-tax'},
-                {id:'isrS', lbl:'ISR Sal', cls:'head-tax'},
+                ...(sums.grep>0 ? [{id:'grep',lbl:'GREP',cls:'head-grep border-r-2'}] : []), ...(sums.home>0 ? [{id:'home',lbl:'Home',cls:'head-home border-r-2'}] : []),
+                {id:'ss', lbl:'SS', cls:'head-tax border-l-2'}, {id:'se', lbl:'SE', cls:'head-tax'}, {id:'isrS', lbl:'ISR Sal', cls:'head-tax'},
                 ...(sums.grep>0 ? [{id:'isrG',lbl:'ISR GREP',cls:'head-tax'}] : []),
-                {id:'ygross', lbl:'YTD Gross', cls:'head-ytd border-l-2 font-bold'},
-                ...(sums.grep>0 ? [{id:'ygrep',lbl:'YTD GREP',cls:'head-ytd'}] : []),
-                {id:'yss', lbl:'YTD SS', cls:'head-ytd border-l-2'},
-                {id:'yse', lbl:'YTD SE', cls:'head-ytd'},
-                {id:'yisrS', lbl:'YTD ISR Sal', cls:'head-ytd'},
-                ...(sums.grep>0 ? [{id:'yisrG',lbl:'YTD ISR GREP',cls:'head-ytd'}] : []),
-                {id:'ynet', lbl:'YTD Net', cls:'head-ytd font-bold border-l-2'}
+                // Deductions (Conditional)
+                {id:'ins', lbl:'Ins', cls:'head-ded border-l-2'},
+                ...(sums.l1>0 ? [{id:'loan1',lbl:'Loan 1',cls:'head-ded'}] : []), ...(sums.l2>0 ? [{id:'loan2',lbl:'Loan 2',cls:'head-ded'}] : []),
+                ...(sums.l3>0 ? [{id:'loan3',lbl:'Loan 3',cls:'head-ded'}] : []), ...(sums.l4>0 ? [{id:'loan4',lbl:'Loan 4',cls:'head-ded'}] : []),
+                ...(sums.l5>0 ? [{id:'loan5',lbl:'Loan 5',cls:'head-ded'}] : []),
+                // YTD
+                {id:'ygross', lbl:'YTD Gross', cls:'head-ytd border-l-2 font-bold'}, ...(sums.grep>0 ? [{id:'ygrep',lbl:'YTD GREP',cls:'head-ytd'}] : []),
+                {id:'yss', lbl:'YTD SS', cls:'head-ytd border-l-2'}, {id:'yse', lbl:'YTD SE', cls:'head-ytd'}, {id:'yisrS', lbl:'YTD ISR Sal', cls:'head-ytd'},
+                ...(sums.grep>0 ? [{id:'yisrG',lbl:'YTD ISR GREP',cls:'head-ytd'}] : []), {id:'ynet', lbl:'YTD Net', cls:'head-ytd font-bold border-l-2'}
             ];
 
-            const thead = document.querySelector('#mainTable thead');
-            thead.innerHTML = `<tr>${cols.map(c => `<th class="p-3 ${c.cls}">${c.lbl}</th>`).join('')}</tr>`;
+            const thead = document.querySelector('#mainTable thead'); thead.innerHTML = `<tr>${cols.map(c => `<th class="p-3 ${c.cls}">${c.lbl}</th>`).join('')}</tr>`;
 
             let ytd = { grossSal:0, grepTotal:0, homeTotal:0, net:0, salBase:0, grepBase:0, actSS:0, actSE:0, actISR:0, actISRG:0, isrSalPaid:0, isrGrepPaid:0, seBase:0, totalTax:0, totalDed:0 };
             const chartData = { sal: { paid:[], leg:[], labels:[] }, grep: { paid:[], leg:[], labels:[] } };
-            const tbody = document.querySelector('#mainTable tbody');
-            tbody.innerHTML = '';
+            const tbody = document.querySelector('#mainTable tbody'); tbody.innerHTML = '';
 
             entries.forEach(e => {
                 const salGross = e.base + e.qbp + e.ot + e.vac + e.xiii + e.extra;
                 const actTax = e.actSS + e.actSE + e.actISR + e.actISRGREP;
-                const otherDed = e.ins + e.loans.reduce((s,l)=>s+l.amount,0);
+                const loanSum = e.loan1 + e.loan2 + e.loan3 + e.loan4 + e.loan5;
+                const otherDed = e.ins + loanSum;
 
-                ytd.salBase += salGross; ytd.grepBase += e.grep;
-                ytd.seBase += (e.base + e.ot + e.vac + e.extra); 
+                ytd.salBase += salGross; ytd.grepBase += e.grep; ytd.seBase += (e.base + e.ot + e.vac + e.extra); 
                 ytd.grossSal += salGross; ytd.grepTotal += e.grep; ytd.homeTotal += e.home;
                 ytd.actSS += e.actSS; ytd.actSE += e.actSE; ytd.actISR += e.actISR; ytd.actISRG += e.actISRGREP;
-                ytd.totalTax += actTax; ytd.totalDed += otherDed;
-                ytd.isrSalPaid += e.actISR; ytd.isrGrepPaid += e.actISRGREP;
+                ytd.totalTax += actTax; ytd.totalDed += otherDed; ytd.isrSalPaid += e.actISR; ytd.isrGrepPaid += e.actISRGREP;
 
                 const legSalTaxTotal = getTax(ytd.salBase, RULES.ISR_SAL);
                 const legGrepTaxTotal = getTax(ytd.grepBase, RULES.ISR_GREP);
@@ -578,18 +511,13 @@
                 chartData.sal.labels.push(''); chartData.sal.paid.push(ytd.isrSalPaid); chartData.sal.leg.push(legSalTaxTotal);
                 chartData.grep.labels.push(''); chartData.grep.paid.push(ytd.isrGrepPaid); chartData.grep.leg.push(legGrepTaxTotal);
 
-                // Highlight Logic
                 const isEditing = e.id === editingId;
                 const rowClass = isEditing ? 'editing-row border-b border-blue-300' : 'hover:bg-blue-50/30 transition border-b border-slate-50';
 
                 let tr = `<tr class="${rowClass}">`;
                 cols.forEach(c => {
-                    let val = '-'; let css = `p-3 ${c.cls} bg-transparent`; // Removed bg-white to allow row color to show
-                    if(c.id==='act') val = `
-                        <div class="flex space-x-1">
-                            <button onclick="editEntry(${e.id})" class="text-blue-400 hover:text-blue-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-                            <button onclick="deleteEntry(${e.id})" class="text-red-300 hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                        </div>`;
+                    let val = '-'; let css = `p-3 ${c.cls} bg-transparent`;
+                    if(c.id==='act') val = `<div class="flex space-x-1"><button onclick="editEntry(${e.id})" class="text-blue-400 hover:text-blue-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button><button onclick="deleteEntry(${e.id})" class="text-red-300 hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>`;
                     else if(c.id==='date') { val = e.date; css += ' font-medium text-slate-700'; }
                     else if(['base','qbp','ot','vac','xiii','extra'].includes(c.id)) { if(e[c.id]>0) val='$'+fmt(e[c.id]); css+=' text-slate-500'; }
                     else if(c.id==='gross') { val='$'+fmt(salGross); css+=' font-bold text-blue-700 border-l-2 border-r-2 border-slate-100'; }
@@ -599,6 +527,7 @@
                     else if(c.id==='se') { val = `<span class="cell-val">$${fmt(e.actSE)}</span><span class="cell-pct">${pct(e.actSE, e.base+e.ot+e.vac+e.extra)}</span>`; }
                     else if(c.id==='isrS') { val = `<span class="cell-val">$${fmt(e.actISR)}</span><span class="cell-pct">${pct(e.actISR, salGross)}</span>`; }
                     else if(c.id==='isrG') { val = `<span class="cell-val">$${fmt(e.actISRGREP)}</span><span class="cell-pct">${pct(e.actISRGREP, e.grep)}</span>`; }
+                    else if(['ins','loan1','loan2','loan3','loan4','loan5'].includes(c.id)) { if(e[c.id]>0) val='$'+fmt(e[c.id]); css+=' text-red-800'; }
                     else if(c.id==='ygross') { val='$'+fmt(ytd.grossSal); css+=' font-bold text-slate-600 border-l-2 border-slate-200'; }
                     else if(c.id==='ygrep') { val='$'+fmt(ytd.grepTotal); css+=' text-slate-500'; }
                     else if(c.id==='yss') { val = `<span class="cell-val">$${fmt(ytd.actSS)}</span><span class="cell-pct">${pct(ytd.actSS, ytd.salBase)}</span>`; css+=' border-l-2 border-slate-200'; }
@@ -611,132 +540,47 @@
                 tr += '</tr>'; tbody.insertAdjacentHTML('beforeend', tr);
             });
 
-            // Update KPIs (identical to v0.22)
-            document.getElementById('kpiCFSal').innerText = '$'+fmt(ytd.grossSal);
-            document.getElementById('kpiCFGrep').innerText = '$'+fmt(ytd.grepTotal);
-            document.getElementById('kpiCFHome').innerText = '$'+fmt(ytd.homeTotal);
-            document.getElementById('kpiCFTotal').innerText = '$'+fmt(ytd.grossSal + ytd.grepTotal + ytd.homeTotal);
-            document.getElementById('kpiCFTax').innerText = '-$'+fmt(ytd.totalTax);
-            document.getElementById('kpiCFDed').innerText = '-$'+fmt(ytd.totalDed);
-            document.getElementById('kpiCFNet').innerText = '$'+fmt(ytd.net);
+            // Update KPIs (Same as v0.23 logic)
+            document.getElementById('kpiCFSal').innerText = '$'+fmt(ytd.grossSal); document.getElementById('kpiCFGrep').innerText = '$'+fmt(ytd.grepTotal); document.getElementById('kpiCFHome').innerText = '$'+fmt(ytd.homeTotal); document.getElementById('kpiCFTotal').innerText = '$'+fmt(ytd.grossSal + ytd.grepTotal + ytd.homeTotal);
+            document.getElementById('kpiCFTax').innerText = '-$'+fmt(ytd.totalTax); document.getElementById('kpiCFDed').innerText = '-$'+fmt(ytd.totalDed); document.getElementById('kpiCFNet').innerText = '$'+fmt(ytd.net);
 
-            // XIII Smart Logic (Copied from v0.22)
-            const editorDateVal = document.getElementById('entryDate').value;
-            let referenceDate = new Date();
-            if (editorDateVal) referenceDate = parseDate(editorDateVal);
+            // XIII Smart Logic (Same as v0.23)
+            const editorDateVal = document.getElementById('entryDate').value; let referenceDate = new Date(); if (editorDateVal) referenceDate = parseDate(editorDateVal);
             const m = referenceDate.getMonth(); const d = referenceDate.getDate(); const year = referenceDate.getFullYear();
             let xiiiStart, xiiiEnd, currentPeriod;
             if (m < 3 || (m===3 && d<=15)) { currentPeriod = "APRIL (1st)"; xiiiStart = new Date(year-1, 11, 16); xiiiEnd = new Date(year, 3, 15); } 
             else if (m < 7 || (m===7 && d<=15)) { currentPeriod = "AUGUST (2nd)"; xiiiStart = new Date(year, 3, 16); xiiiEnd = new Date(year, 7, 15); } 
             else { currentPeriod = "DECEMBER (3rd)"; xiiiStart = new Date(year, 7, 16); xiiiEnd = new Date(year, 11, 15); }
-
             let xiiiSalSum = 0; let xiiiGrepSum = 0; let entryCountInWindow = 0; let firstEntryDate = null;
             if (currentPeriod === "APRIL (1st)") { xiiiSalSum += dec24Sal; xiiiGrepSum += dec24Grep; }
-
-            entries.forEach(e => {
-                const eDate = parseDate(e.date);
-                if (eDate >= xiiiStart && eDate <= xiiiEnd) {
-                    xiiiSalSum += (e.base + e.ot + e.vac + e.extra);
-                    xiiiGrepSum += e.grep;
-                    entryCountInWindow++;
-                    if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate;
-                }
-            });
-
-            // Smart Projection (Copied)
+            entries.forEach(e => { const eDate = parseDate(e.date); if (eDate >= xiiiStart && eDate <= xiiiEnd) { xiiiSalSum += (e.base + e.ot + e.vac + e.extra); xiiiGrepSum += e.grep; entryCountInWindow++; if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate; } });
             let isProjected = false;
             if (currentPeriod === "APRIL (1st)" && dec24Sal === 0 && entryCountInWindow > 0) {
-                const windowStart = new Date(year-1, 11, 16);
-                const daysDiff = (firstEntryDate - windowStart) / (1000 * 60 * 60 * 24);
-                if (daysDiff > 10) {
-                    const missingChecks = Math.floor(daysDiff / 14);
-                    if (missingChecks > 0) {
-                        const avgSal = xiiiSalSum / entryCountInWindow;
-                        const avgGrep = xiiiGrepSum / entryCountInWindow;
-                        xiiiSalSum += (avgSal * missingChecks);
-                        xiiiGrepSum += (avgGrep * missingChecks);
-                        isProjected = true;
-                    }
-                }
+                const windowStart = new Date(year-1, 11, 16); const daysDiff = (firstEntryDate - windowStart) / (1000 * 60 * 60 * 24);
+                if (daysDiff > 10) { const missingChecks = Math.floor(daysDiff / 14); if (missingChecks > 0) { const avgSal = xiiiSalSum / entryCountInWindow; const avgGrep = xiiiGrepSum / entryCountInWindow; xiiiSalSum += (avgSal * missingChecks); xiiiGrepSum += (avgGrep * missingChecks); isProjected = true; } }
             }
+            document.getElementById('kpiXIIIVal').innerText = '$'+fmt(xiiiSalSum/12); document.getElementById('kpiXIIIGrepVal').innerText = '$'+fmt(xiiiGrepSum/12); document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} ${isProjected ? '(Projected)' : 'Est.'}`;
 
-            document.getElementById('kpiXIIIVal').innerText = '$'+fmt(xiiiSalSum/12);
-            document.getElementById('kpiXIIIGrepVal').innerText = '$'+fmt(xiiiGrepSum/12);
-            document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} ${isProjected ? '(Projected)' : 'Est.'}`;
-
-            // Ded/Charts (Same as v0.22)
-            const totalIns = entries.reduce((s,e)=>s+e.ins, 0);
-            const totalLoans = entries.reduce((s,e)=>s+e.loans.reduce((l,loan)=>l+loan.amount,0), 0);
-            const totalOther = totalIns + totalLoans;
+            // Ded/Charts
+            const totalIns = entries.reduce((s,e)=>s+e.ins, 0); const totalLoans = entries.reduce((s,e)=>s+e.loan1+e.loan2+e.loan3+e.loan4+e.loan5, 0); const totalOther = totalIns + totalLoans;
             const cardDed = document.getElementById('cardDed');
-            if (totalOther > 0) {
-                cardDed.classList.remove('opacity-25', 'pointer-events-none');
-                document.getElementById('kpiDedIns').innerText = '$'+fmt(totalIns);
-                document.getElementById('kpiDedLoan').innerText = '$'+fmt(totalLoans);
-                document.getElementById('kpiDedTotal').innerText = '$'+fmt(totalOther);
-            } else { cardDed.classList.add('opacity-25', 'pointer-events-none'); document.getElementById('kpiDedTotal').innerText = '$0.00'; }
+            if (totalOther > 0) { cardDed.classList.remove('opacity-25', 'pointer-events-none'); document.getElementById('kpiDedIns').innerText = '$'+fmt(totalIns); document.getElementById('kpiDedLoan').innerText = '$'+fmt(totalLoans); document.getElementById('kpiDedTotal').innerText = '$'+fmt(totalOther); } else { cardDed.classList.add('opacity-25', 'pointer-events-none'); document.getElementById('kpiDedTotal').innerText = '$0.00'; }
 
-            const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL);
-            document.getElementById('kpiSalPaidVal').innerText = '$'+fmt(ytd.isrSalPaid);
-            document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase);
-            document.getElementById('kpiSalLegVal').innerText = '$'+fmt(legSalTax);
-            document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase);
-            renderMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg, (i)=>chartSalInstance=i);
-
-            const cardGrep = document.getElementById('cardGrep');
-            if(hasGrep) {
-                cardGrep.classList.remove('opacity-50');
-                const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP);
-                document.getElementById('kpiGrepPaidVal').innerText = '$'+fmt(ytd.isrGrepPaid);
-                document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase);
-                document.getElementById('kpiGrepLegVal').innerText = '$'+fmt(legGrepTax);
-                document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase);
-                renderMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg, (i)=>chartGrepInstance=i);
-            } else { cardGrep.classList.add('opacity-50'); }
+            const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL); document.getElementById('kpiSalPaidVal').innerText = '$'+fmt(ytd.isrSalPaid); document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase); document.getElementById('kpiSalLegVal').innerText = '$'+fmt(legSalTax); document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase); renderMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg, (i)=>chartSalInstance=i);
+            const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP); document.getElementById('kpiGrepPaidVal').innerText = '$'+fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$'+fmt(legGrepTax); document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase); renderMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg, (i)=>chartGrepInstance=i);
+            if (!hasGrep) document.getElementById('cardGrep').classList.add('opacity-50'); else document.getElementById('cardGrep').classList.remove('opacity-50');
         }
 
-        // --- UTILS ---
-        function parseDate(dateStr) {
-            if (!dateStr) return new Date();
-            if (dateStr.includes('/')) {
-                const [m, d, y] = dateStr.split('/').map(Number);
-                return new Date(y, m - 1, d, 12, 0, 0); 
-            } else if (dateStr.includes('-')) {
-                const [y, m, d] = dateStr.split('-').map(Number);
-                return new Date(y, m - 1, d, 12, 0, 0);
-            }
-            return new Date(dateStr);
-        }
-
-        function renderMicroChart(canvasId, instance, paidData, legData, setInstance) {
-            const ctx = document.getElementById(canvasId);
-            if(instance) instance.destroy();
-            const newInst = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: paidData.map(()=>''),
-                    datasets: [
-                        { data:paidData, borderColor:'#ef4444', borderWidth:2, pointRadius:0, tension:0.3 },
-                        { data:legData, borderColor:'#10b981', borderWidth:2, borderDash:[2,2], pointRadius:0, tension:0.3 }
-                    ]
-                },
-                options: {
-                    responsive:true, maintainAspectRatio:false,
-                    plugins:{legend:{display:false}, tooltip:{enabled:false}},
-                    scales:{x:{display:false}, y:{display:false}},
-                    layout: { padding: 5 }
-                }
-            });
-            setInstance(newInst);
-        }
+        function parseDate(dateStr) { if (!dateStr) return new Date(); if (dateStr.includes('/')) { const [m, d, y] = dateStr.split('/').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } else if (dateStr.includes('-')) { const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } return new Date(dateStr); }
+        function renderMicroChart(canvasId, instance, paidData, legData, setInstance) { const ctx = document.getElementById(canvasId); if(instance) instance.destroy(); const newInst = new Chart(ctx, { type: 'line', data: { labels: paidData.map(()=>''), datasets: [ { data:paidData, borderColor:'#ef4444', borderWidth:2, pointRadius:0, tension:0.3 }, { data:legData, borderColor:'#10b981', borderWidth:2, borderDash:[2,2], pointRadius:0, tension:0.3 } ] }, options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{enabled:false}}, scales:{x:{display:false}, y:{display:false}}, layout: { padding: 5 } } }); setInstance(newInst); }
 
         function exportCSV(){
             if(!entries.length) return alert("No Data");
-            const h=['ID','Date','Base','QBP','OT','Vac','XIII','Extra','GREP','Home','SS','SE','ISR_S','ISR_G','Ins','Loans'];
+            const h=['ID','Date','Base','QBP','OT','Vac','XIII','Extra','GREP','Home','SS','SE','ISR_S','ISR_G','Ins','Loan1','Loan2','Loan3','Loan4','Loan5'];
             const r=entries.map(e=> {
                 const d = parseDate(e.date);
                 const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-                return [e.id,iso,e.base,e.qbp,e.ot,e.vac,e.xiii,e.extra,e.grep,e.home,e.actSS,e.actSE,e.actISR,e.actISRGREP,e.ins,e.loans.reduce((s,l)=>s+l.amount,0)];
+                return [e.id,iso,e.base,e.qbp,e.ot,e.vac,e.xiii,e.extra,e.grep,e.home,e.actSS,e.actSE,e.actISR,e.actISRGREP,e.ins,e.loan1,e.loan2,e.loan3,e.loan4,e.loan5];
             });
             const csv="data:text/csv;charset=utf-8,"+h.join(",")+"\n"+r.map(v=>v.join(",")).join("\n");
             const l=document.createElement("a"); l.href=encodeURI(csv); l.download="payroll.csv"; l.click();
@@ -748,15 +592,19 @@
                 const l=e.target.result.split("\n");
                 for(let i=1;i<l.length;i++){
                     const c=l[i].split(","); if(c.length<15) continue;
-                    // Check for duplicate ID on import (collision avoidance)
                     let newId = parseInt(c[0]);
                     if (entries.some(ex => ex.id === newId)) newId = generateID();
+                    
+                    // Backward Compat: Map old "Loans" (idx 15) to Loan 1 if newer columns missing
+                    let l1=0,l2=0,l3=0,l4=0,l5=0;
+                    if(c.length <= 16) { l1 = parseFloat(c[15]||0); } // Old Format
+                    else { l1=parseFloat(c[15]||0); l2=parseFloat(c[16]||0); l3=parseFloat(c[17]||0); l4=parseFloat(c[18]||0); l5=parseFloat(c[19]||0); }
 
                     entries.push({
                         id:newId, date:c[1], base:parseFloat(c[2]), qbp:parseFloat(c[3]), ot:parseFloat(c[4]),
                         vac:parseFloat(c[5]), xiii:parseFloat(c[6]), extra:parseFloat(c[7]), grep:parseFloat(c[8]), home:parseFloat(c[9]),
                         actSS:parseFloat(c[10]), actSE:parseFloat(c[11]), actISR:parseFloat(c[12]), actISRGREP:parseFloat(c[13]),
-                        ins:parseFloat(c[14]), loans:[]
+                        ins:parseFloat(c[14]), loan1:l1, loan2:l2, loan3:l3, loan4:l4, loan5:l5
                     });
                 }
                 refresh();
