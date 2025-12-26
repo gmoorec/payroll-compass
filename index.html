@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.24</title>
+    <title>Payroll Compass | v0.25</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,7 +51,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.24</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.25</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -105,9 +105,9 @@
                         <div id="rowXIII" class="hidden-row flex justify-between items-center bg-yellow-50 p-1 rounded"><label class="text-xs font-bold text-yellow-700">XIII Mes</label><input type="number" id="inpXIII" oninput="calcTotal()" class="w-24 text-right border border-yellow-200 text-sm" placeholder="0.00"></div>
                         <div id="rowExtra" class="flex justify-between items-center"><label class="text-xs font-medium text-slate-400">Extra/Misc</label><input type="number" id="inpExtra" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         
-                        <!-- SALARY GROSS -->
+                        <!-- GROSS SALARY (RENAMED) -->
                         <div class="flex justify-between items-center pt-2 border-t mt-2 mb-2">
-                            <span class="text-xs font-bold text-slate-500">SALARY GROSS</span>
+                            <span class="text-xs font-bold text-slate-500">GROSS SALARY</span>
                             <span id="dispSalTotal" class="font-bold text-lg text-blue-700">$0.00</span>
                         </div>
 
@@ -226,16 +226,14 @@
                 <!-- 3. YTD DEDUCTIONS BREAKDOWN (Conditional) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col transition-opacity duration-300" id="cardDed">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Other Deductions</div>
-                    <table class="w-full text-xs mt-1">
-                        <tr><td class="py-1 text-slate-500">Insurance</td><td class="py-1 text-right font-bold text-slate-700" id="kpiDedIns">$0.00</td></tr>
-                        <tr><td class="py-1 text-slate-500">Loans</td><td class="py-1 text-right font-bold text-slate-700" id="kpiDedLoan">$0.00</td></tr>
-                        <tr class="border-t border-slate-100 mt-2"><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600" id="kpiDedTotal">$0.00</td></tr>
+                    <table class="w-full text-xs mt-1" id="kpiDedTable">
+                        <!-- Content populated by JS -->
                     </table>
                 </div>
 
                 <!-- 4. ISR COMPARISON (SALARY) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">ISR Salary (YTD)</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD ISR SALARY</div>
                     <div class="flex flex-1 items-center">
                         <div class="w-1/2 pr-2 space-y-2">
                              <div>
@@ -257,7 +255,7 @@
 
                 <!-- 5. ISR COMPARISON (GREP) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 opacity-50 transition-opacity flex flex-col" id="cardGrep">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">ISR GREP (YTD)</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD ISR GREP</div>
                     <div class="flex flex-1 items-center">
                         <div class="w-1/2 pr-2 space-y-2">
                              <div>
@@ -471,7 +469,7 @@
                 ...(sums.qbp>0 ? [{id:'qbp',lbl:'QBP',cls:'head-inc'}] : []), ...(sums.ot>0 ? [{id:'ot',lbl:'OT',cls:'head-inc'}] : []),
                 ...(sums.vac>0 ? [{id:'vac',lbl:'Vac',cls:'head-inc'}] : []), ...(sums.xiii>0 ? [{id:'xiii',lbl:'XIII',cls:'head-inc'}] : []),
                 ...(sums.extra>0 ? [{id:'extra',lbl:'Extra',cls:'head-inc'}] : []),
-                {id:'gross', lbl:'Gross Salary', cls:'head-inc font-bold border-l-2 border-r-2'},
+                {id:'gross', lbl:'GROSS SALARY', cls:'head-inc font-bold border-l-2 border-r-2'},
                 ...(sums.grep>0 ? [{id:'grep',lbl:'GREP',cls:'head-grep border-r-2'}] : []), ...(sums.home>0 ? [{id:'home',lbl:'Home',cls:'head-home border-r-2'}] : []),
                 {id:'ss', lbl:'SS', cls:'head-tax border-l-2'}, {id:'se', lbl:'SE', cls:'head-tax'}, {id:'isrS', lbl:'ISR Sal', cls:'head-tax'},
                 ...(sums.grep>0 ? [{id:'isrG',lbl:'ISR GREP',cls:'head-tax'}] : []),
@@ -562,9 +560,32 @@
             document.getElementById('kpiXIIIVal').innerText = '$'+fmt(xiiiSalSum/12); document.getElementById('kpiXIIIGrepVal').innerText = '$'+fmt(xiiiGrepSum/12); document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} ${isProjected ? '(Projected)' : 'Est.'}`;
 
             // Ded/Charts
-            const totalIns = entries.reduce((s,e)=>s+e.ins, 0); const totalLoans = entries.reduce((s,e)=>s+e.loan1+e.loan2+e.loan3+e.loan4+e.loan5, 0); const totalOther = totalIns + totalLoans;
+            const totalIns = entries.reduce((s,e)=>s+e.ins, 0); 
+            // Calculate Sums for each Loan Slot
+            const sumL1 = entries.reduce((s,e)=>s+e.loan1,0); const sumL2 = entries.reduce((s,e)=>s+e.loan2,0);
+            const sumL3 = entries.reduce((s,e)=>s+e.loan3,0); const sumL4 = entries.reduce((s,e)=>s+e.loan4,0); const sumL5 = entries.reduce((s,e)=>s+e.loan5,0);
+            
+            const totalLoans = sumL1+sumL2+sumL3+sumL4+sumL5;
+            const totalOther = totalIns + totalLoans;
             const cardDed = document.getElementById('cardDed');
-            if (totalOther > 0) { cardDed.classList.remove('opacity-25', 'pointer-events-none'); document.getElementById('kpiDedIns').innerText = '$'+fmt(totalIns); document.getElementById('kpiDedLoan').innerText = '$'+fmt(totalLoans); document.getElementById('kpiDedTotal').innerText = '$'+fmt(totalOther); } else { cardDed.classList.add('opacity-25', 'pointer-events-none'); document.getElementById('kpiDedTotal').innerText = '$0.00'; }
+            
+            if (totalOther > 0) { 
+                cardDed.classList.remove('opacity-25', 'pointer-events-none'); 
+                
+                // Build dynamic rows for Deductions KPI
+                let dedHtml = `<tr><td class="py-1 text-slate-500">Insurance</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(totalIns)}</td></tr>`;
+                if(sumL1 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 1</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL1)}</td></tr>`;
+                if(sumL2 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 2</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL2)}</td></tr>`;
+                if(sumL3 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 3</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL3)}</td></tr>`;
+                if(sumL4 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 4</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL4)}</td></tr>`;
+                if(sumL5 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 5</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL5)}</td></tr>`;
+                dedHtml += `<tr class="border-t border-slate-100 mt-2"><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">${'$'+fmt(totalOther)}</td></tr>`;
+                
+                document.getElementById('kpiDedTable').innerHTML = dedHtml;
+            } else { 
+                cardDed.classList.add('opacity-25', 'pointer-events-none'); 
+                document.getElementById('kpiDedTable').innerHTML = `<tr><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">$0.00</td></tr>`;
+            }
 
             const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL); document.getElementById('kpiSalPaidVal').innerText = '$'+fmt(ytd.isrSalPaid); document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase); document.getElementById('kpiSalLegVal').innerText = '$'+fmt(legSalTax); document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase); renderMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg, (i)=>chartSalInstance=i);
             const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP); document.getElementById('kpiGrepPaidVal').innerText = '$'+fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$'+fmt(legGrepTax); document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase); renderMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg, (i)=>chartGrepInstance=i);
