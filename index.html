@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.25</title>
+    <title>Payroll Compass | v0.26</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,7 +51,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.25</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.26</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -105,7 +105,7 @@
                         <div id="rowXIII" class="hidden-row flex justify-between items-center bg-yellow-50 p-1 rounded"><label class="text-xs font-bold text-yellow-700">XIII Mes</label><input type="number" id="inpXIII" oninput="calcTotal()" class="w-24 text-right border border-yellow-200 text-sm" placeholder="0.00"></div>
                         <div id="rowExtra" class="flex justify-between items-center"><label class="text-xs font-medium text-slate-400">Extra/Misc</label><input type="number" id="inpExtra" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         
-                        <!-- GROSS SALARY (RENAMED) -->
+                        <!-- GROSS SALARY -->
                         <div class="flex justify-between items-center pt-2 border-t mt-2 mb-2">
                             <span class="text-xs font-bold text-slate-500">GROSS SALARY</span>
                             <span id="dispSalTotal" class="font-bold text-lg text-blue-700">$0.00</span>
@@ -223,7 +223,7 @@
                     </div>
                 </div>
 
-                <!-- 3. YTD DEDUCTIONS BREAKDOWN (Conditional) -->
+                <!-- 3. YTD OTHER DEDUCTIONS -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col transition-opacity duration-300" id="cardDed">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Other Deductions</div>
                     <table class="w-full text-xs mt-1" id="kpiDedTable">
@@ -231,7 +231,7 @@
                     </table>
                 </div>
 
-                <!-- 4. ISR COMPARISON (SALARY) -->
+                <!-- 4. YTD ISR SALARY -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD ISR SALARY</div>
                     <div class="flex flex-1 items-center">
@@ -253,7 +253,7 @@
                     </div>
                 </div>
 
-                <!-- 5. ISR COMPARISON (GREP) -->
+                <!-- 5. YTD ISR GREP -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 opacity-50 transition-opacity flex flex-col" id="cardGrep">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD ISR GREP</div>
                     <div class="flex flex-1 items-center">
@@ -301,7 +301,6 @@
 
     <!-- === MODAL: ABOUT === -->
     <div id="aboutModal" class="hidden-row fixed inset-0 z-50 flex items-center justify-center modal-bg px-4">
-        <!-- Content preserved -->
         <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
             <button onclick="toggleModal('aboutModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -309,9 +308,86 @@
             <div class="prose prose-sm max-w-none text-slate-700">
                 <h1 class="text-2xl font-bold mb-1 text-slate-800">🧭 Payroll Compass</h1>
                 <h4 class="text-sm font-medium text-slate-500 mb-6">A private, client-side tool for validating Panamanian payroll deductions.</h4>
-                <p>See GitHub for documentation.</p>
-                <div class="mt-8 pt-4 border-t text-xs text-slate-500 italic">
-                    Disclaimer: This tool is for educational purposes based on the Panamanian Tax Code (2025). Official calculations may vary. Consult HR for disputes.
+                
+                <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">😵‍💫</span> The Problem</h2>
+                <p class="mb-4">Payroll transparency can be a challenge. Employees often struggle to understand why their tax deductions fluctuate throughout the year, especially when variable income (Bonuses, Overtime, XIII Month) is involved.</p>
+                <p class="mb-4">Standard pay stubs provide a snapshot of a single moment, but they rarely explain the context of how progressive taxes (like ISR) are calculated on a cumulative basis. This leads to confusion, "sticker shock" during bonus months, and unnecessary friction between staff and management.</p>
+                
+                <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🎯</span> The Solution</h2>
+                <p class="mb-4">Payroll Compass is a web-based calculator designed to bridge the gap between "What Payroll Deducted" and "What the Law Says."</p>
+                <p class="mb-2">It allows you to:</p>
+                <ul class="list-disc pl-5 mb-4 space-y-1">
+                    <li><strong>Digitize your Pay Stubs:</strong> Input your data period-by-period.</li>
+                    <li><strong>Validate Deductions:</strong> Instantly compare the taxes deducted against the official Panama 2025 tax tables.</li>
+                    <li><strong>Visualize the "Why":</strong> See cumulative graphs that explain how your effective tax rate changes over time.</li>
+                    <li><strong>Forecast:</strong> Understand how a future bonus might impact your net pay.</li>
+                </ul>
+
+                <h2 class="text-lg font-bold mt-6 mb-2 flex items-center text-emerald-600"><span class="mr-2">🔒</span> Privacy & Data Security</h2>
+                <p class="mb-2 font-bold">🚨 This is the most important section. Please read carefully.</p>
+                <p class="mb-2">This tool follows a <strong>"Zero-Knowledge"</strong> architecture.</p>
+                <ul class="list-disc pl-5 mb-4 space-y-1">
+                    <li><strong>Client-Side Only:</strong> All calculations happen 100% inside your web browser (Chrome, Edge, Safari).</li>
+                    <li><strong>No Database:</strong> There is no backend server. We do not store your salary, your name, or your financial data.</li>
+                    <li><strong>No Transmission:</strong> When you click "Add Pay Stub," data moves from your keyboard to your browser's temporary memory (RAM). It is NEVER sent over the internet.
+                        <ul class="list-none pl-4 mt-1 text-slate-500 italic"><li>- The same is true when you "Import" your CSV backup file.</li></ul>
+                    </li>
+                    <li><strong>Session-Based:</strong> If you refresh the page, your data is gone forever—unless you explicitly choose to export a backup.</li>
+                </ul>
+                <h3 class="text-md font-bold mt-4 mb-2">How to Verify</h3>
+                <p class="mb-4">You can disconnect your internet after loading the page. The tool will continue to function perfectly, proving that it does not need to "phone home" to work.</p>
+
+                <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🧑‍🏫</span> How to Use</h2>
+                <h4 class="text-md font-bold mt-2 mb-2">A. The Editor (Left Panel)</h4>
+                <ul class="list-disc pl-5 mb-4 space-y-1">
+                    <li><strong>Date:</strong> Select the date of your pay stub.</li>
+                    <li><strong>Income:</strong> Enter your Base Salary.
+                        <ul class="list-none pl-4 mt-1 text-slate-500 italic">
+                            <li>- Use the toggle buttons <strong>[QBP], [OT], [VAC]</strong> to reveal inputs for variable income.</li>
+                            <li>- <strong>[XIII]:</strong> This toggle only appears if the selected date is within a valid payment window (Apr 1-15, Aug 1-15, Dec 1-15).</li>
+                            <li>- <strong>Totals:</strong> The editor updates "GROSS SALARY" (Taxable Base) and "TOTAL EARNINGS" (Base + GREP + Home) in real-time.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Taxes:</strong> Enter the actual tax amounts shown on your physical pay stub (SS, SE, ISR).</li>
+                    <li><strong>Deductions:</strong> 
+                        <ul class="list-none pl-4 mt-1 text-slate-500 italic">
+                            <li>- <strong>Insurance:</strong> Use this entry to document additional Insurance deductions.</li>
+                            <li>- <strong>Loans:</strong> Use the toggle buttons (L1 - L5) to manage up to 5 distinct loan slots.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Actions:</strong>
+                        <ul class="list-none pl-4 mt-1 text-slate-500 italic">
+                             <li>- <strong>Add Pay Stub:</strong> Commits the data to the ledger.</li>
+                             <li>- <strong>Edit:</strong> Click the ✏️ pencil icon on a row to safely modify it.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h4 class="text-md font-bold mt-4 mb-2">B. Interpreting the Data (Right Panel)</h4>
+                <p class="mb-2 font-semibold">The Dashboard (KPIs)</p>
+                <ul class="list-disc pl-5 mb-4 space-y-1">
+                    <li><strong>YTD Cash Flow:</strong> A waterfall view showing your Total Income minus Taxes and Deductions, resulting in your Net Pay.</li>
+                    <li><strong>XIII Estimator:</strong> A smart projection of your next 13th Month payment. Use the gear icon ⚙️ to set carryover income from previous December.</li>
+                    <li><strong>YTD Deductions:</strong> Breakdown of Insurance and individual Loans.</li>
+                    <li><strong>ISR Cards:</strong> Visual curve comparing Paid (Red) vs Legal (Green) tax accumulation.</li>
+                </ul>
+                <p class="mb-2 font-semibold">The Ledger (Table)</p>
+                <ul class="list-disc pl-5 mb-4 space-y-1">
+                    <li><strong>Granularity:</strong> Every income type gets its own column.</li>
+                    <li><strong>Effective Rates:</strong> Shown below every tax dollar amount (e.g., 9.75%). This helps identify exactly which rate was applied to that specific check.</li>
+                    <li><strong>YTD Section:</strong> The right side of the table shows running totals.</li>
+                </ul>
+
+                <h4 class="text-md font-bold mt-4 mb-2">C. Saving Your Data</h4>
+                <p class="mb-2">Since we don't store your data, you must manage it yourself:</p>
+                <ul class="list-disc pl-5 mb-4 space-y-1">
+                    <li>At the top right corner, click the <strong>[Export]</strong> button to save a file to your computer.</li>
+                    <li>Next time you visit, click the <strong>[Import]</strong> button and select that file to pick up where you left off.</li>
+                </ul>
+
+                <h2 class="text-lg font-bold mt-6 mb-2">Disclaimer</h2>
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
+                    This tool is for educational and validation purposes only. It is built based on the Panamanian Tax Code (Código Fiscal) as of 2025. While it strives for 100% accuracy, official payroll calculations may vary due to specific internal accounting practices. Always consult with HR for official disputes.
                 </div>
             </div>
         </div>
@@ -326,6 +402,7 @@
 
         // --- CONFIG ---
         let entries = [];
+        let loanCount = 0;
         let chartSalInstance = null;
         let chartGrepInstance = null;
         let editingId = null;
