@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.13</title>
+    <title>Payroll Compass | v0.14</title>
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -33,39 +35,53 @@
         .head-tax { background-color: #fff7ed; color: #9a3412; border-bottom: 2px solid #fed7aa; }
         .head-ytd { background-color: #f1f5f9; color: #475569; border-bottom: 2px solid #cbd5e1; }
         .head-fix { background-color: #ffffff; color: #334155; border-bottom: 2px solid #e2e8f0; }
+
+        /* Modal Styles */
+        .modal-bg { background-color: rgba(0, 0, 0, 0.5); }
     </style>
 </head>
-<body class="text-slate-800 h-screen flex flex-col">
+<body class="text-slate-800 h-screen flex flex-col relative">
 
+    <!-- === HEADER === -->
     <nav class="bg-slate-900 text-white shadow-lg shrink-0">
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.13</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.14</span>
             </div>
-            <div class="flex space-x-4 text-xs font-medium">
+            <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
                 <button onclick="document.getElementById('csvInput').click()" class="hover:text-emerald-300 transition">Import</button>
                 <button onclick="exportCSV()" class="hover:text-emerald-300 transition">Export</button>
                 <button onclick="resetSession()" class="text-red-400 hover:text-red-300 transition">Reset</button>
+                <div class="h-4 w-px bg-slate-700 mx-2"></div>
+                <button onclick="toggleModal('aboutModal')" class="flex items-center text-slate-300 hover:text-white transition">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    About
+                </button>
             </div>
         </div>
     </nav>
 
+    <!-- === MAIN LAYOUT === -->
     <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
         
+        <!-- === LEFT SIDEBAR (EDITOR) === -->
         <div class="w-full lg:w-96 bg-white border-r border-slate-200 overflow-y-auto shrink-0 z-10 shadow-xl">
             <div class="p-5 space-y-5">
                 
+                <!-- Date & Header -->
                 <div class="flex justify-between items-center border-b pb-4">
                     <h2 class="font-bold text-slate-700">Editor</h2>
                     <input type="date" id="entryDate" onchange="checkXIIIWindow()" class="bg-slate-50 border rounded px-2 py-1 text-xs font-medium text-slate-600 outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
+                <!-- Income Section -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Earnings</span>
                         <div class="flex space-x-1">
+                            <!-- Toggle Buttons -->
                             <button id="btnTog_rowQBP" onclick="toggleRow('rowQBP', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">QBP</button>
                             <button id="btnTog_rowOT" onclick="toggleRow('rowOT', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">OT</button>
                             <button id="btnTog_rowVac" onclick="toggleRow('rowVac', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">VAC</button>
@@ -74,26 +90,31 @@
                         </div>
                     </div>
 
+                    <!-- Inputs -->
                     <div class="space-y-2">
                         <div class="flex justify-between items-center"><label class="text-xs font-medium text-slate-600">Base Salary</label><input type="number" id="inpBase" oninput="calcTotal()" class="w-24 text-right border rounded px-2 py-1 text-sm outline-none focus:border-blue-500" placeholder="0.00"></div>
                         
+                        <!-- Hidden Inputs -->
                         <div id="rowQBP" class="hidden-row flex justify-between items-center bg-blue-50 p-1 rounded"><label class="text-xs font-bold text-blue-700">QBP Bonus</label><input type="number" id="inpQBP" oninput="calcTotal()" class="w-24 text-right border border-blue-200 text-sm" placeholder="0.00"></div>
                         <div id="rowOT" class="hidden-row flex justify-between items-center"><label class="text-xs font-medium">Overtime</label><input type="number" id="inpOT" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         <div id="rowVac" class="hidden-row flex justify-between items-center"><label class="text-xs font-medium">Vacation</label><input type="number" id="inpVac" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         <div id="rowXIII" class="hidden-row flex justify-between items-center bg-yellow-50 p-1 rounded"><label class="text-xs font-bold text-yellow-700">XIII Mes</label><input type="number" id="inpXIII" oninput="calcTotal()" class="w-24 text-right border border-yellow-200 text-sm" placeholder="0.00"></div>
                         <div id="rowExtra" class="flex justify-between items-center"><label class="text-xs font-medium text-slate-400">Extra/Misc</label><input type="number" id="inpExtra" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         
+                        <!-- SALARY GROSS MOVED HERE -->
                         <div class="flex justify-between items-center pt-2 border-t mt-2 mb-2">
                             <span class="text-xs font-bold text-slate-500">SALARY GROSS</span>
                             <span id="dispTotal" class="font-bold text-lg text-blue-700">$0.00</span>
                         </div>
 
+                        <!-- GREP / HOME (Excluded from Gross) -->
                         <div id="rowGREP" class="hidden-row flex justify-between items-center border-t border-dashed pt-2"><label class="text-xs font-bold text-purple-700">GREP</label><input type="number" id="inpGREP" oninput="calcTotal()" class="w-24 text-right border bg-purple-50 text-sm" placeholder="0.00"></div>
                         <div class="flex justify-between items-center pt-1"><label class="text-xs font-medium text-emerald-600">Home Stipend</label><input type="number" id="inpHome" value="50.00" oninput="calcTotal()" class="w-24 text-right border border-emerald-100 text-sm" placeholder="0.00"></div>
                     </div>
                     
                 </div>
 
+                <!-- Taxes -->
                 <div class="space-y-3 pt-2">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Taxes (Actual)</span>
                     <div class="grid grid-cols-2 gap-3">
@@ -104,6 +125,7 @@
                     </div>
                 </div>
 
+                <!-- Other -->
                 <div class="space-y-2 pt-2">
                     <div class="flex justify-between">
                          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deductions</span>
@@ -118,10 +140,13 @@
             </div>
         </div>
 
+        <!-- === RIGHT CONTENT (DASHBOARD) === -->
         <div class="flex-1 overflow-hidden flex flex-col bg-slate-50">
             
+            <!-- KPI DASHBOARD -->
             <div class="grid grid-cols-4 gap-4 p-6 shrink-0">
                 
+                <!-- 1. YTD CASH FLOW -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Cash Flow</div>
                     <table class="w-full text-xs">
@@ -136,6 +161,7 @@
                     </table>
                 </div>
 
+                <!-- 2. YTD DEDUCTIONS BREAKDOWN -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Other Deductions</div>
                     <table class="w-full text-xs mt-1">
@@ -145,6 +171,7 @@
                     </table>
                 </div>
 
+                <!-- 3. ISR COMPARISON (SALARY) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">ISR Salary (YTD)</div>
                     <div class="flex flex-1 items-center">
@@ -166,6 +193,7 @@
                     </div>
                 </div>
 
+                <!-- 4. ISR COMPARISON (GREP) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 opacity-50 transition-opacity flex flex-col" id="cardGrep">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">ISR GREP (YTD)</div>
                     <div class="flex flex-1 items-center">
@@ -189,18 +217,21 @@
 
             </div>
 
+            <!-- TABLE CONTAINER -->
             <div class="flex-1 overflow-hidden px-6 pb-6 flex flex-col">
                 <div class="bg-white rounded-lg shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
                     <div class="p-3 bg-white border-b flex justify-between items-center shrink-0">
                         <h3 class="font-bold text-xs text-slate-700 uppercase">Granular Ledger</h3>
-                        </div>
+                    </div>
                     
                     <div class="flex-1 overflow-auto custom-scroll relative">
                         <table class="w-full text-left border-collapse" id="mainTable">
                             <thead class="sticky top-0 z-20 shadow-sm">
-                                </thead>
+                                <!-- Headers Generated via JS -->
+                            </thead>
                             <tbody class="divide-y divide-slate-100 bg-white">
-                                </tbody>
+                                <!-- Rows Generated via JS -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -208,6 +239,53 @@
         </div>
     </div>
 
+    <!-- === MODAL: ABOUT === -->
+    <div id="aboutModal" class="hidden-row fixed inset-0 z-50 flex items-center justify-center modal-bg px-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+            <button onclick="toggleModal('aboutModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div class="prose prose-sm max-w-none text-slate-700">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800">Payroll Compass 🧭</h2>
+                <p class="mb-4"><strong>A private, client-side tool for validating Panamanian payroll deductions.</strong></p>
+                
+                <h3 class="text-lg font-bold mt-6 mb-2">1. The Problem</h3>
+                <p>Payroll transparency can be a challenge. Employees often struggle to understand why their tax deductions fluctuate throughout the year, especially when variable income (Bonuses, Overtime, 13th Month) is involved.</p>
+                
+                <h3 class="text-lg font-bold mt-6 mb-2">2. The Solution</h3>
+                <ul class="list-disc pl-5 mb-4 space-y-1">
+                    <li><strong>Digitize Pay Stubs:</strong> Input data period-by-period.</li>
+                    <li><strong>Validate Deductions:</strong> Compare taxes against official Panama 2025 tables.</li>
+                    <li><strong>Visualize:</strong> See cumulative graphs explaining effective tax rates.</li>
+                </ul>
+
+                <h3 class="text-lg font-bold mt-6 mb-2 text-emerald-600">3. 🔒 Privacy & Data Security</h3>
+                <p class="mb-2"><strong>Zero-Knowledge Architecture:</strong></p>
+                <ul class="list-disc pl-5 mb-4 space-y-1">
+                    <li><strong>Client-Side Only:</strong> All calculations happen in your browser.</li>
+                    <li><strong>No Database:</strong> We do not store your salary or name.</li>
+                    <li><strong>No Transmission:</strong> Data never leaves your device.</li>
+                    <li><strong>Session-Based:</strong> Refreshing the page wipes all data.</li>
+                </ul>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">4. How to Use</h3>
+                <p class="mb-2"><strong>Getting Started:</strong></p>
+                <ol class="list-decimal pl-5 mb-4 space-y-1">
+                    <li>Select the <strong>Date</strong>.</li>
+                    <li><strong>Income:</strong> Enter Base Salary. Toggle other income types (QBP, OT).</li>
+                    <li><strong>Taxes:</strong> Enter actual tax amounts from your stub.</li>
+                    <li>Click <strong>Add Pay Stub</strong>.</li>
+                </ol>
+                <p class="mb-2"><strong>Saving Data:</strong> Use <strong>Export CSV</strong> to save a backup to your computer.</p>
+
+                <div class="mt-8 pt-4 border-t text-xs text-slate-500 italic">
+                    Disclaimer: This tool is for educational purposes based on the Panamanian Tax Code (2025). Official calculations may vary. Consult HR for disputes.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIC -->
     <script>
         // --- HELPERS ---
         const fmt = n => n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -274,6 +352,17 @@
             div.className = "flex justify-between items-center fade-in loan-row";
             div.innerHTML = `<input type="text" class="l-name w-20 text-[10px] border-b outline-none" placeholder="Name" value="${name}"><input type="number" class="l-amt w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00" value="${amt}">`;
             document.getElementById('loanContainer').appendChild(div);
+        }
+
+        function toggleModal(modalID) {
+            const modal = document.getElementById(modalID);
+            if(modal.classList.contains('hidden-row')) {
+                modal.classList.remove('hidden-row');
+                modal.classList.add('flex'); // Ensure flex display
+            } else {
+                modal.classList.add('hidden-row');
+                modal.classList.remove('flex');
+            }
         }
 
         // --- MATH ---
