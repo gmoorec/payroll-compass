@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.18</title>
+    <title>Payroll Compass | v0.19</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.18</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.19</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -392,9 +392,13 @@
 
         // --- UI LOGIC ---
         function checkXIIIWindow() {
-            const d = new Date(document.getElementById('entryDate').value + 'T12:00:00');
-            const m = d.getMonth(), day = d.getDate();
-            const isWin = (m===3||m===7||m===11) && day<=15;
+            const dateVal = document.getElementById('entryDate').value;
+            // Robust parsing: split string to avoid timezone issues
+            if (!dateVal) return;
+            const [y, m, d] = dateVal.split('-').map(Number);
+            const monthIndex = m - 1; // 0-11
+            
+            const isWin = (monthIndex===3||monthIndex===7||monthIndex===11) && d<=15;
             const btn = document.getElementById('btnTog_rowXIII');
             if(isWin) { btn.classList.remove('hidden-row'); } 
             else { btn.classList.add('hidden-row'); toggleRow('rowXIII', btn, false); }
@@ -534,7 +538,8 @@
 
         // --- REFRESH LOGIC ---
         function refresh() {
-            entries.sort((a,b) => new Date(a.date) - new Date(b.date));
+            // Sort by Date using standardized parsing
+            entries.sort((a,b) => parseDate(a.date) - parseDate(b.date));
 
             // Update Dec '24 from inputs
             dec24Sal = parseFloat(document.getElementById('inpDec24Sal').value || 0);
@@ -703,45 +708,37 @@
             let xiiiStart, xiiiEnd;
             let currentPeriod = "Unknown";
 
-            // Determine current period based on system date
-            // Note: In real world, user would select "Which XIII payment am I checking?"
-            // For now, simple date check.
             const m = today.getMonth(); // 0-11
             const d = today.getDate();
             
             // Logic:
-            // 1st Payment (Apr): Dec 16 prev - Apr 15
-            // 2nd Payment (Aug): Apr 16 - Aug 15
-            // 3rd Payment (Dec): Aug 16 - Dec 15
-            
-            // If before Apr 15, target = Apr 15
+            // 1st: Dec 16 (prev) - Apr 15
+            // 2nd: Apr 16 - Aug 15
+            // 3rd: Aug 16 - Dec 15
             if (m < 3 || (m===3 && d<=15)) {
                 currentPeriod = "APRIL (1st)";
                 xiiiStart = new Date(year-1, 11, 16); // Dec 16 prev
-                xiiiEnd = new Date(year, 3, 15); // Apr 15
+                xiiiEnd = new Date(year, 3, 15);
             } else if (m < 7 || (m===7 && d<=15)) {
                 currentPeriod = "AUGUST (2nd)";
                 xiiiStart = new Date(year, 3, 16); // Apr 16
-                xiiiEnd = new Date(year, 7, 15); // Aug 15
+                xiiiEnd = new Date(year, 7, 15);
             } else {
                 currentPeriod = "DECEMBER (3rd)";
                 xiiiStart = new Date(year, 7, 16); // Aug 16
-                xiiiEnd = new Date(year, 11, 15); // Dec 15
+                xiiiEnd = new Date(year, 11, 15);
             }
 
-            // Sum qualifying earnings in window
-            // Filter entries
             let xiiiSum = 0;
             // Add Ghost Data ONLY for 1st Payment
             if (currentPeriod === "APRIL (1st)") {
-                xiiiSum += dec24Sal; // From config input
+                xiiiSum += dec24Sal; 
             }
 
             entries.forEach(e => {
-                const eDate = new Date(e.date + 'T12:00:00');
+                const eDate = parseDate(e.date);
                 if (eDate >= xiiiStart && eDate <= xiiiEnd) {
-                    // Rule: Sum Gross Salary (Base + OT + Vac + Extra) - Exclude QBP?
-                    // User said: "exclude QBP"
+                    // Sum Gross Salary (Base + OT + Vac + Extra) - Exclude QBP
                     xiiiSum += (e.base + e.ot + e.vac + e.extra);
                 }
             });
@@ -789,6 +786,20 @@
             } else {
                 cardGrep.classList.add('opacity-50');
             }
+        }
+
+        // --- UTILS ---
+        function parseDate(dateStr) {
+            // Handles YYYY-MM-DD (ISO) and M/D/YYYY (Excel/CSV)
+            if (!dateStr) return new Date();
+            if (dateStr.includes('/')) {
+                const [m, d, y] = dateStr.split('/').map(Number);
+                return new Date(y, m - 1, d, 12, 0, 0); // Noon to avoid timezone shifts
+            } else if (dateStr.includes('-')) {
+                const [y, m, d] = dateStr.split('-').map(Number);
+                return new Date(y, m - 1, d, 12, 0, 0);
+            }
+            return new Date(dateStr);
         }
 
         function renderMicroChart(canvasId, instance, paidData, legData, setInstance) {
