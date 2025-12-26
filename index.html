@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.17</title>
+    <title>Payroll Compass | v0.18</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.17</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.18</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -155,7 +155,7 @@
         <div class="flex-1 overflow-hidden flex flex-col bg-slate-50">
             
             <!-- KPI DASHBOARD -->
-            <div class="grid grid-cols-4 gap-4 p-6 shrink-0">
+            <div class="grid grid-cols-5 gap-4 p-6 shrink-0">
                 
                 <!-- 1. YTD CASH FLOW -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
@@ -172,8 +172,36 @@
                     </table>
                 </div>
 
-                <!-- 2. YTD DEDUCTIONS BREAKDOWN -->
-                <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col">
+                <!-- 2. XIII ESTIMATOR (NEW) -->
+                <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col relative" id="kpiXIII">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1 flex justify-between">
+                        <span>XIII Estimator</span>
+                        <button onclick="toggleDecInput()" class="text-blue-500 hover:text-blue-700" title="Set Dec '24 Carryover">⚙️</button>
+                    </div>
+                    
+                    <!-- Config Panel (Hidden by default) -->
+                    <div id="xiiiConfig" class="hidden-row absolute top-8 left-2 right-2 bg-white border border-slate-200 shadow-md p-2 rounded z-10">
+                        <label class="text-[10px] text-slate-500 block mb-1">Dec '24 Gross (Salary Only)</label>
+                        <input type="number" id="inpDec24Sal" class="w-full text-right border rounded px-1 py-0.5 text-xs mb-2" placeholder="0.00" onchange="refresh()">
+                        <label class="text-[10px] text-slate-500 block mb-1">Dec '24 GREP</label>
+                        <input type="number" id="inpDec24Grep" class="w-full text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00" onchange="refresh()">
+                    </div>
+
+                    <div class="flex-1 flex flex-col justify-center space-y-2">
+                        <div>
+                            <div class="text-[9px] text-slate-500 uppercase">Est. Next Payment</div>
+                            <div class="text-lg font-bold text-yellow-600" id="kpiXIIIVal">$0.00</div>
+                        </div>
+                        <div>
+                            <div class="text-[9px] text-slate-500 uppercase">Accumulated Base</div>
+                            <div class="text-xs font-medium text-slate-700" id="kpiXIIIBase">$0.00</div>
+                        </div>
+                        <div class="text-[9px] text-slate-400 italic" id="kpiXIIIStatus">Calculating...</div>
+                    </div>
+                </div>
+
+                <!-- 3. YTD DEDUCTIONS BREAKDOWN (Conditional) -->
+                <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col transition-opacity duration-300" id="cardDed">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Other Deductions</div>
                     <table class="w-full text-xs mt-1">
                         <tr><td class="py-1 text-slate-500">Insurance</td><td class="py-1 text-right font-bold text-slate-700" id="kpiDedIns">$0.00</td></tr>
@@ -182,7 +210,7 @@
                     </table>
                 </div>
 
-                <!-- 3. ISR COMPARISON (SALARY) -->
+                <!-- 4. ISR COMPARISON (SALARY) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">ISR Salary (YTD)</div>
                     <div class="flex flex-1 items-center">
@@ -204,7 +232,7 @@
                     </div>
                 </div>
 
-                <!-- 4. ISR COMPARISON (GREP) -->
+                <!-- 5. ISR COMPARISON (GREP) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 opacity-50 transition-opacity flex flex-col" id="cardGrep">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">ISR GREP (YTD)</div>
                     <div class="flex flex-1 items-center">
@@ -353,6 +381,10 @@
             ISR_GREP: [{t:0,r:0.10}, {t:25000,r:0.15}]
         };
 
+        // Dec '24 Ghost Data
+        let dec24Sal = 0;
+        let dec24Grep = 0;
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('entryDate').valueAsDate = new Date();
             checkXIIIWindow();
@@ -431,6 +463,12 @@
             }
         }
 
+        function toggleDecInput() {
+            const cfg = document.getElementById('xiiiConfig');
+            if(cfg.classList.contains('hidden-row')) cfg.classList.remove('hidden-row');
+            else cfg.classList.add('hidden-row');
+        }
+
         // --- MATH ---
         function getTax(inc, brackets) {
             let t=0;
@@ -497,6 +535,10 @@
         // --- REFRESH LOGIC ---
         function refresh() {
             entries.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            // Update Dec '24 from inputs
+            dec24Sal = parseFloat(document.getElementById('inpDec24Sal').value || 0);
+            dec24Grep = parseFloat(document.getElementById('inpDec24Grep').value || 0);
 
             // 1. Column Config
             const sums = { qbp:0, ot:0, vac:0, xiii:0, extra:0, grep:0, home:0 };
@@ -655,15 +697,78 @@
             document.getElementById('kpiCFDed').innerText = '-$'+fmt(ytd.totalDed);
             document.getElementById('kpiCFNet').innerText = '$'+fmt(ytd.net);
 
-            // --- KPI 2: DEDUCTIONS ---
-            // Sum loans across entries
+            // --- KPI 2: XIII ESTIMATOR ---
+            const today = new Date();
+            const year = today.getFullYear();
+            let xiiiStart, xiiiEnd;
+            let currentPeriod = "Unknown";
+
+            // Determine current period based on system date
+            // Note: In real world, user would select "Which XIII payment am I checking?"
+            // For now, simple date check.
+            const m = today.getMonth(); // 0-11
+            const d = today.getDate();
+            
+            // Logic:
+            // 1st Payment (Apr): Dec 16 prev - Apr 15
+            // 2nd Payment (Aug): Apr 16 - Aug 15
+            // 3rd Payment (Dec): Aug 16 - Dec 15
+            
+            // If before Apr 15, target = Apr 15
+            if (m < 3 || (m===3 && d<=15)) {
+                currentPeriod = "APRIL (1st)";
+                xiiiStart = new Date(year-1, 11, 16); // Dec 16 prev
+                xiiiEnd = new Date(year, 3, 15); // Apr 15
+            } else if (m < 7 || (m===7 && d<=15)) {
+                currentPeriod = "AUGUST (2nd)";
+                xiiiStart = new Date(year, 3, 16); // Apr 16
+                xiiiEnd = new Date(year, 7, 15); // Aug 15
+            } else {
+                currentPeriod = "DECEMBER (3rd)";
+                xiiiStart = new Date(year, 7, 16); // Aug 16
+                xiiiEnd = new Date(year, 11, 15); // Dec 15
+            }
+
+            // Sum qualifying earnings in window
+            // Filter entries
+            let xiiiSum = 0;
+            // Add Ghost Data ONLY for 1st Payment
+            if (currentPeriod === "APRIL (1st)") {
+                xiiiSum += dec24Sal; // From config input
+            }
+
+            entries.forEach(e => {
+                const eDate = new Date(e.date + 'T12:00:00');
+                if (eDate >= xiiiStart && eDate <= xiiiEnd) {
+                    // Rule: Sum Gross Salary (Base + OT + Vac + Extra) - Exclude QBP?
+                    // User said: "exclude QBP"
+                    xiiiSum += (e.base + e.ot + e.vac + e.extra);
+                }
+            });
+
+            const estimatedXIII = xiiiSum / 12;
+            
+            document.getElementById('kpiXIIIVal').innerText = '$'+fmt(estimatedXIII);
+            document.getElementById('kpiXIIIBase').innerText = '$'+fmt(xiiiSum);
+            document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} Est.`;
+
+            // --- KPI 3: DEDUCTIONS (Conditional) ---
             const totalIns = entries.reduce((s,e)=>s+e.ins, 0);
             const totalLoans = entries.reduce((s,e)=>s+e.loans.reduce((l,loan)=>l+loan.amount,0), 0);
-            document.getElementById('kpiDedIns').innerText = '$'+fmt(totalIns);
-            document.getElementById('kpiDedLoan').innerText = '$'+fmt(totalLoans);
-            document.getElementById('kpiDedTotal').innerText = '$'+fmt(totalIns + totalLoans);
+            const totalOther = totalIns + totalLoans;
+            
+            const cardDed = document.getElementById('cardDed');
+            if (totalOther > 0) {
+                cardDed.classList.remove('opacity-25', 'pointer-events-none');
+                document.getElementById('kpiDedIns').innerText = '$'+fmt(totalIns);
+                document.getElementById('kpiDedLoan').innerText = '$'+fmt(totalLoans);
+                document.getElementById('kpiDedTotal').innerText = '$'+fmt(totalOther);
+            } else {
+                cardDed.classList.add('opacity-25', 'pointer-events-none'); // Dim instead of hide to keep grid alignment
+                document.getElementById('kpiDedTotal').innerText = '$0.00';
+            }
 
-            // --- KPI 3: ISR SALARY ---
+            // --- KPI 4: ISR SALARY ---
             const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL);
             document.getElementById('kpiSalPaidVal').innerText = '$'+fmt(ytd.isrSalPaid);
             document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase);
@@ -671,7 +776,7 @@
             document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase);
             renderMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg, (i)=>chartSalInstance=i);
 
-            // --- KPI 4: ISR GREP ---
+            // --- KPI 5: ISR GREP ---
             const cardGrep = document.getElementById('cardGrep');
             if(hasGrep) {
                 cardGrep.classList.remove('opacity-50');
@@ -708,7 +813,9 @@
             setInstance(newInst);
         }
 
-        // Export/Import
+        // Export/Import (Update export to include Dec24 Ghost Data if present?)
+        // For simplicity, Ghost Data is currently session-only unless we modify CSV structure.
+        // Let's keep CSV structure standard for compatibility, user re-enters Dec data if needed or we append to comments.
         function exportCSV(){
             if(!entries.length) return alert("No Data");
             const h=['ID','Date','Base','QBP','OT','Vac','XIII','Extra','GREP','Home','SS','SE','ISR_S','ISR_G','Ins','Loans'];
