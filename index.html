@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.30</title>
+    <title>Payroll Compass | v0.31</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -40,6 +40,14 @@
         
         /* Edit Mode Highlight */
         .editing-row { background-color: #fef9c3 !important; }
+
+        /* [NEW] Refactored Active State for Toggle Buttons */
+        .btn-active {
+            background-color: #eff6ff; /* bg-blue-50 */
+            color: #2563eb; /* text-blue-600 */
+            border-color: #93c5fd; /* border-blue-300 */
+            box-shadow: 0 0 0 2px #93c5fd; /* ring-2 ring-blue-300 */
+        }
     </style>
 </head>
 <body class="text-slate-800 h-screen flex flex-col relative">
@@ -48,7 +56,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.30</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.31</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <a href="https://github.com/gmoorec/payroll-compass" target="_blank" class="text-slate-400 hover:text-white transition" title="View Source Code on GitHub">
@@ -392,7 +400,6 @@
 
         // --- CONFIG ---
         let entries = [];
-        let loanCount = 0;
         let chartSalInstance = null;
         let chartGrepInstance = null;
         let editingId = null;
@@ -407,7 +414,7 @@
             checkXIIIWindow();
         });
 
-        // --- UI LOGIC ---
+        // --- UI LOGIC (REFACTORED) ---
         function checkXIIIWindow() {
             const dateVal = document.getElementById('entryDate').value;
             if (!dateVal) return;
@@ -418,20 +425,24 @@
             if(isWin) { btn.classList.remove('hidden-row'); } else { btn.classList.add('hidden-row'); toggleRow('rowXIII', btn, false); }
         }
 
+        // Optimized Toggle using CSS Class
         function toggleRow(rowId, btn, force) {
             const el = document.getElementById(rowId);
             const isHidden = el.classList.contains('hidden-row');
             const show = force !== undefined ? force : isHidden;
 
-            if(show) {
+            if (show) {
                 el.classList.remove('hidden-row');
-                btn.classList.add('ring-2','ring-blue-300','bg-blue-50','text-blue-600','border-blue-300');
-                if(rowId === 'rowGREP') document.getElementById('taxRowGREP').classList.remove('hidden-row');
+                btn.classList.add('btn-active');
+                if (rowId === 'rowGREP') document.getElementById('taxRowGREP').classList.remove('hidden-row');
             } else {
                 el.classList.add('hidden-row');
-                btn.classList.remove('ring-2','ring-blue-300','bg-blue-50','text-blue-600','border-blue-300');
-                if(rowId === 'rowGREP') document.getElementById('taxRowGREP').classList.add('hidden-row');
-                if(el.querySelector('input')) el.querySelector('input').value = '';
+                btn.classList.remove('btn-active');
+                if (rowId === 'rowGREP') document.getElementById('taxRowGREP').classList.add('hidden-row');
+                
+                // Reset input value when hiding
+                const inp = el.querySelector('input');
+                if (inp) inp.value = '';
             }
             calcTotal();
         }
@@ -447,14 +458,6 @@
 
             let sumTax = 0; TAX_IDS.forEach(id => { const el = document.getElementById(id); if(el && !el.closest('.hidden-row')) sumTax += parseFloat(el.value||0); });
             document.getElementById('dispTotalTaxes').innerText = '$'+fmt(sumTax);
-        }
-
-        function addLoan(name='', amt='') {
-            loanCount++;
-            const div = document.createElement('div');
-            div.className = "flex justify-between items-center fade-in loan-row";
-            div.innerHTML = `<input type="text" class="l-name w-20 text-[10px] border-b outline-none" placeholder="Name" value="${name}"><input type="number" class="l-amt w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00" value="${amt}">`;
-            document.getElementById('loanContainer').appendChild(div);
         }
 
         function toggleModal(modalID) { const m = document.getElementById(modalID); m.classList.contains('hidden-row') ? (m.classList.remove('hidden-row'), m.classList.add('flex')) : (m.classList.add('hidden-row'), m.classList.remove('flex')); }
@@ -639,7 +642,7 @@
             document.getElementById('kpiCFSal').innerText = '$'+fmt(ytd.grossSal); document.getElementById('kpiCFGrep').innerText = '$'+fmt(ytd.grepTotal); document.getElementById('kpiCFHome').innerText = '$'+fmt(ytd.homeTotal); document.getElementById('kpiCFTotal').innerText = '$'+fmt(ytd.grossSal + ytd.grepTotal + ytd.homeTotal);
             document.getElementById('kpiCFTax').innerText = '-$'+fmt(ytd.totalTax); document.getElementById('kpiCFDed').innerText = '-$'+fmt(ytd.totalDed); document.getElementById('kpiCFNet').innerText = '$'+fmt(ytd.net);
 
-            // XIII Smart Logic (UPDATED for Year Agnostic)
+            // XIII Smart Logic
             const editorDateVal = document.getElementById('entryDate').value; let referenceDate = new Date(); if (editorDateVal) referenceDate = parseDate(editorDateVal);
             const m = referenceDate.getMonth(); const d = referenceDate.getDate(); const year = referenceDate.getFullYear();
             let xiiiStart, xiiiEnd, currentPeriod;
@@ -651,11 +654,7 @@
             if (currentPeriod === "APRIL (1st)") { xiiiSalSum += lastDecSal; xiiiGrepSum += lastDecGrep; }
             entries.forEach(e => { const eDate = parseDate(e.date); if (eDate >= xiiiStart && eDate <= xiiiEnd) { 
                 xiiiSalSum += (e.base + e.ot + e.vac + e.extra); 
-                if (e.xiii > 0) {
-                     // Exclude XIII from sum
-                } else {
-                     xiiiGrepSum += e.grep;
-                }
+                if (e.xiii > 0) { } else { xiiiGrepSum += e.grep; }
                 entryCountInWindow++; if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate; 
             } });
             
@@ -678,8 +677,12 @@
                 document.getElementById('kpiDedTable').innerHTML = dedHtml;
             } else { cardDed.classList.add('opacity-25', 'pointer-events-none'); document.getElementById('kpiDedTable').innerHTML = `<tr><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">$0.00</td></tr>`; }
 
-            const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL); document.getElementById('kpiSalPaidVal').innerText = '$'+fmt(ytd.isrSalPaid); document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase); document.getElementById('kpiSalLegVal').innerText = '$'+fmt(legSalTax); document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase); renderMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg, (i)=>chartSalInstance=i);
-            const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP); document.getElementById('kpiGrepPaidVal').innerText = '$'+fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$'+fmt(legGrepTax); document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase); renderMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg, (i)=>chartGrepInstance=i);
+            const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL); document.getElementById('kpiSalPaidVal').innerText = '$'+fmt(ytd.isrSalPaid); document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase); document.getElementById('kpiSalLegVal').innerText = '$'+fmt(legSalTax); document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase);
+            chartSalInstance = updateMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg);
+
+            const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP); document.getElementById('kpiGrepPaidVal').innerText = '$'+fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$'+fmt(legGrepTax); document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase);
+            chartGrepInstance = updateMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg);
+
             if (!hasGrep) document.getElementById('cardGrep').classList.add('opacity-50'); else document.getElementById('cardGrep').classList.remove('opacity-50');
             
             if (editingId) {
@@ -692,7 +695,37 @@
         }
 
         function parseDate(dateStr) { if (!dateStr) return new Date(); if (dateStr.includes('/')) { const [m, d, y] = dateStr.split('/').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } else if (dateStr.includes('-')) { const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } return new Date(dateStr); }
-        function renderMicroChart(canvasId, instance, paidData, legData, setInstance) { const ctx = document.getElementById(canvasId); if(instance) instance.destroy(); const newInst = new Chart(ctx, { type: 'line', data: { labels: paidData.map(()=>''), datasets: [ { data:paidData, borderColor:'#ef4444', borderWidth:2, pointRadius:0, tension:0.3 }, { data:legData, borderColor:'#10b981', borderWidth:2, borderDash:[2,2], pointRadius:0, tension:0.3 } ] }, options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{enabled:false}}, scales:{x:{display:false}, y:{display:false}}, layout: { padding: 5 } } }); setInstance(newInst); }
+        
+        // [NEW] Optimized Chart Logic: Update instead of Destroy
+        function updateMicroChart(canvasId, instance, paidData, legData) {
+            // Update Existing
+            if (instance) {
+                instance.data.labels = paidData.map(()=>'');
+                instance.data.datasets[0].data = paidData;
+                instance.data.datasets[1].data = legData;
+                instance.update('none'); // 'none' mode prevents animation flicker
+                return instance;
+            }
+            // Create New
+            const ctx = document.getElementById(canvasId);
+            return new Chart(ctx, { 
+                type: 'line', 
+                data: { 
+                    labels: paidData.map(()=>''), 
+                    datasets: [ 
+                        { data:paidData, borderColor:'#ef4444', borderWidth:2, pointRadius:0, tension:0.3 }, 
+                        { data:legData, borderColor:'#10b981', borderWidth:2, borderDash:[2,2], pointRadius:0, tension:0.3 } 
+                    ] 
+                }, 
+                options: { 
+                    responsive:true, 
+                    maintainAspectRatio:false, 
+                    plugins:{legend:{display:false}, tooltip:{enabled:false}}, 
+                    scales:{x:{display:false}, y:{display:false}}, 
+                    layout: { padding: 5 } 
+                } 
+            });
+        }
 
         function exportCSV(){
             if(!entries.length && lastDecSal === 0 && lastDecGrep === 0) return alert("No Data");
@@ -708,6 +741,8 @@
             const csv="data:text/csv;charset=utf-8,"+h.join(",")+"\n"+r.map(v=>v.join(",")).join("\n");
             const l=document.createElement("a"); l.href=encodeURI(csv); l.download="payroll.csv"; l.click();
         }
+        
+        // [NEW] Simplified Import Logic
         function importCSV(inp){
             const f=inp.files[0]; if(!f) return;
             const r=new FileReader();
@@ -728,8 +763,8 @@
                     if (entries.some(ex => ex.id === newId)) newId = generateID();
                     
                     let l1=0,l2=0,l3=0,l4=0,l5=0;
-                    if(c.length <= 16) { l1 = parseFloat(c[15]||0); }
-                    else { l1=parseFloat(c[15]||0); l2=parseFloat(c[16]||0); l3=parseFloat(c[17]||0); l4=parseFloat(c[18]||0); l5=parseFloat(c[19]||0); }
+                    // Simplified: Assume columns exist if present
+                    l1=parseFloat(c[15]||0); l2=parseFloat(c[16]||0); l3=parseFloat(c[17]||0); l4=parseFloat(c[18]||0); l5=parseFloat(c[19]||0);
 
                     entries.push({
                         id:newId, date:c[1], base:parseFloat(c[2]), qbp:parseFloat(c[3]), ot:parseFloat(c[4]),
