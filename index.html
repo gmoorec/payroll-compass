@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.27</title>
+    <title>Payroll Compass | v0.28</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,7 +51,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.27</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.28</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -105,7 +105,7 @@
                         <div id="rowXIII" class="hidden-row flex justify-between items-center bg-yellow-50 p-1 rounded"><label class="text-xs font-bold text-yellow-700">XIII Mes</label><input type="number" id="inpXIII" oninput="calcTotal()" class="w-24 text-right border border-yellow-200 text-sm" placeholder="0.00"></div>
                         <div id="rowExtra" class="flex justify-between items-center"><label class="text-xs font-medium text-slate-400">Extra/Misc</label><input type="number" id="inpExtra" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         
-                        <!-- GROSS SALARY (Standardized Label) -->
+                        <!-- GROSS SALARY -->
                         <div class="flex justify-between items-center pt-2 border-t mt-2 mb-2">
                             <span class="text-xs font-bold text-slate-500">GROSS SALARY</span>
                             <span id="dispSalTotal" class="font-bold text-lg text-blue-700">$0.00</span>
@@ -195,7 +195,7 @@
                     </table>
                 </div>
 
-                <!-- 2. XIII ESTIMATOR -->
+                <!-- 2. XIII ESTIMATOR (SMART V2) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col relative" id="kpiXIII">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1 flex justify-between">
                         <span>XIII Estimator</span>
@@ -508,26 +508,18 @@
             const e = entries.find(x => x.id === id); if(!e) return;
             editingId = id;
             
-            // Highlight Logic: Get sorted index
+            // Highlight Logic
             entries.sort((a,b) => parseDate(a.date) - parseDate(b.date));
             const sortIdx = entries.findIndex(x => x.id === id);
             
-            // Trigger Chart Highlight
             if (chartSalInstance) {
-                const meta = chartSalInstance.getDatasetMeta(0);
-                const activeElements = [
-                    { datasetIndex: 0, index: sortIdx },
-                    { datasetIndex: 1, index: sortIdx }
-                ];
+                const activeElements = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }];
                 chartSalInstance.setActiveElements(activeElements);
                 chartSalInstance.tooltip.setActiveElements(activeElements);
                 chartSalInstance.update();
             }
              if (chartGrepInstance) {
-                const activeElements = [
-                    { datasetIndex: 0, index: sortIdx },
-                    { datasetIndex: 1, index: sortIdx }
-                ];
+                const activeElements = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }];
                 chartGrepInstance.setActiveElements(activeElements);
                 chartGrepInstance.tooltip.setActiveElements(activeElements);
                 chartGrepInstance.update();
@@ -557,7 +549,6 @@
             const btn = document.getElementById('btnCommit'); btn.innerText = "Add Pay Stub"; btn.classList.add('bg-slate-800','hover:bg-slate-900'); btn.classList.remove('bg-blue-600','hover:bg-blue-700');
             document.getElementById('btnCancel').classList.add('hidden-row');
             
-            // Clear Chart Highlights
             if(chartSalInstance) { chartSalInstance.setActiveElements([]); chartSalInstance.tooltip.setActiveElements([]); chartSalInstance.update(); }
             if(chartGrepInstance) { chartGrepInstance.setActiveElements([]); chartGrepInstance.tooltip.setActiveElements([]); chartGrepInstance.update(); }
             
@@ -664,7 +655,7 @@
             document.getElementById('kpiCFSal').innerText = '$'+fmt(ytd.grossSal); document.getElementById('kpiCFGrep').innerText = '$'+fmt(ytd.grepTotal); document.getElementById('kpiCFHome').innerText = '$'+fmt(ytd.homeTotal); document.getElementById('kpiCFTotal').innerText = '$'+fmt(ytd.grossSal + ytd.grepTotal + ytd.homeTotal);
             document.getElementById('kpiCFTax').innerText = '-$'+fmt(ytd.totalTax); document.getElementById('kpiCFDed').innerText = '-$'+fmt(ytd.totalDed); document.getElementById('kpiCFNet').innerText = '$'+fmt(ytd.net);
 
-            // XIII Smart Logic (Same as v0.23)
+            // XIII Smart Logic (UPDATED: EXCLUDE current XIII from sum)
             const editorDateVal = document.getElementById('entryDate').value; let referenceDate = new Date(); if (editorDateVal) referenceDate = parseDate(editorDateVal);
             const m = referenceDate.getMonth(); const d = referenceDate.getDate(); const year = referenceDate.getFullYear();
             let xiiiStart, xiiiEnd, currentPeriod;
@@ -673,62 +664,50 @@
             else { currentPeriod = "DECEMBER (3rd)"; xiiiStart = new Date(year, 7, 16); xiiiEnd = new Date(year, 11, 15); }
             let xiiiSalSum = 0; let xiiiGrepSum = 0; let entryCountInWindow = 0; let firstEntryDate = null;
             if (currentPeriod === "APRIL (1st)") { xiiiSalSum += dec24Sal; xiiiGrepSum += dec24Grep; }
-            entries.forEach(e => { const eDate = parseDate(e.date); if (eDate >= xiiiStart && eDate <= xiiiEnd) { xiiiSalSum += (e.base + e.ot + e.vac + e.extra); xiiiGrepSum += e.grep; entryCountInWindow++; if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate; } });
+            entries.forEach(e => { const eDate = parseDate(e.date); if (eDate >= xiiiStart && eDate <= xiiiEnd) { 
+                // Sum components (exclude XIII itself from base)
+                xiiiSalSum += (e.base + e.ot + e.vac + e.extra); 
+                // FIX: Exclude GREP if this is an XIII payment event
+                // Heuristic: If XIII column > 0, assume this row is the XIII bonus payment
+                if (e.xiii > 0) {
+                     // Do NOT add e.grep to sum, as it is likely the XIII GREP bonus
+                } else {
+                     xiiiGrepSum += e.grep;
+                }
+                
+                entryCountInWindow++; if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate; 
+            } });
+            
+            // Smart Projection
             let isProjected = false;
-            if (currentPeriod === "APRIL (1st)" && dec24Sal === 0 && entryCountInWindow > 0) {
+            // (Same projection logic as v0.27)
+             if (currentPeriod === "APRIL (1st)" && dec24Sal === 0 && entryCountInWindow > 0) {
                 const windowStart = new Date(year-1, 11, 16); const daysDiff = (firstEntryDate - windowStart) / (1000 * 60 * 60 * 24);
                 if (daysDiff > 10) { const missingChecks = Math.floor(daysDiff / 14); if (missingChecks > 0) { const avgSal = xiiiSalSum / entryCountInWindow; const avgGrep = xiiiGrepSum / entryCountInWindow; xiiiSalSum += (avgSal * missingChecks); xiiiGrepSum += (avgGrep * missingChecks); isProjected = true; } }
             }
             document.getElementById('kpiXIIIVal').innerText = '$'+fmt(xiiiSalSum/12); document.getElementById('kpiXIIIGrepVal').innerText = '$'+fmt(xiiiGrepSum/12); document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} ${isProjected ? '(Projected)' : 'Est.'}`;
 
             // Ded/Charts
-            const totalIns = entries.reduce((s,e)=>s+e.ins, 0); 
-            // Calculate Sums for each Loan Slot
-            const sumL1 = entries.reduce((s,e)=>s+e.loan1,0); const sumL2 = entries.reduce((s,e)=>s+e.loan2,0);
-            const sumL3 = entries.reduce((s,e)=>s+e.loan3,0); const sumL4 = entries.reduce((s,e)=>s+e.loan4,0); const sumL5 = entries.reduce((s,e)=>s+e.loan5,0);
-            
-            const totalLoans = sumL1+sumL2+sumL3+sumL4+sumL5;
-            const totalOther = totalIns + totalLoans;
+            const totalIns = entries.reduce((s,e)=>s+e.ins, 0); const totalLoans = entries.reduce((s,e)=>s+e.loan1+e.loan2+e.loan3+e.loan4+e.loan5, 0); const totalOther = totalIns + totalLoans;
             const cardDed = document.getElementById('cardDed');
-            
-            if (totalOther > 0) { 
-                cardDed.classList.remove('opacity-25', 'pointer-events-none'); 
-                
-                // Build dynamic rows for Deductions KPI
+            if (totalOther > 0) { cardDed.classList.remove('opacity-25', 'pointer-events-none'); 
                 let dedHtml = `<tr><td class="py-1 text-slate-500">Insurance</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(totalIns)}</td></tr>`;
-                if(sumL1 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 1</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL1)}</td></tr>`;
-                if(sumL2 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 2</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL2)}</td></tr>`;
-                if(sumL3 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 3</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL3)}</td></tr>`;
-                if(sumL4 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 4</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL4)}</td></tr>`;
-                if(sumL5 > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan 5</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sumL5)}</td></tr>`;
+                const lSums = [entries.reduce((s,e)=>s+e.loan1,0), entries.reduce((s,e)=>s+e.loan2,0), entries.reduce((s,e)=>s+e.loan3,0), entries.reduce((s,e)=>s+e.loan4,0), entries.reduce((s,e)=>s+e.loan5,0)];
+                lSums.forEach((sum, i) => { if(sum>0) dedHtml+=`<tr><td class="py-1 text-slate-500">Loan ${i+1}</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sum)}</td></tr>`; });
                 dedHtml += `<tr class="border-t border-slate-100 mt-2"><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">${'$'+fmt(totalOther)}</td></tr>`;
-                
                 document.getElementById('kpiDedTable').innerHTML = dedHtml;
-            } else { 
-                cardDed.classList.add('opacity-25', 'pointer-events-none'); 
-                document.getElementById('kpiDedTable').innerHTML = `<tr><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">$0.00</td></tr>`;
-            }
+            } else { cardDed.classList.add('opacity-25', 'pointer-events-none'); document.getElementById('kpiDedTable').innerHTML = `<tr><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">$0.00</td></tr>`; }
 
             const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL); document.getElementById('kpiSalPaidVal').innerText = '$'+fmt(ytd.isrSalPaid); document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase); document.getElementById('kpiSalLegVal').innerText = '$'+fmt(legSalTax); document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase); renderMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg, (i)=>chartSalInstance=i);
             const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP); document.getElementById('kpiGrepPaidVal').innerText = '$'+fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$'+fmt(legGrepTax); document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase); renderMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg, (i)=>chartGrepInstance=i);
             if (!hasGrep) document.getElementById('cardGrep').classList.add('opacity-50'); else document.getElementById('cardGrep').classList.remove('opacity-50');
             
-            // Re-highlight chart if editingId is set (persists selection during refresh)
+            // Re-highlight if editing
             if (editingId) {
                 const sortIdx = entries.findIndex(x => x.id === editingId);
                 if (sortIdx !== -1) {
-                    if(chartSalInstance) {
-                        const activeElements = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }];
-                        chartSalInstance.setActiveElements(activeElements);
-                        chartSalInstance.tooltip.setActiveElements(activeElements);
-                        chartSalInstance.update();
-                    }
-                     if(chartGrepInstance) {
-                        const activeElements = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }];
-                        chartGrepInstance.setActiveElements(activeElements);
-                        chartGrepInstance.tooltip.setActiveElements(activeElements);
-                        chartGrepInstance.update();
-                    }
+                    if(chartSalInstance) { const ae = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }]; chartSalInstance.setActiveElements(ae); chartSalInstance.tooltip.setActiveElements(ae); chartSalInstance.update(); }
+                    if(chartGrepInstance) { const ae = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }]; chartGrepInstance.setActiveElements(ae); chartGrepInstance.tooltip.setActiveElements(ae); chartGrepInstance.update(); }
                 }
             }
         }
