@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.28</title>
+    <title>Payroll Compass | v0.29</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -46,12 +44,11 @@
 </head>
 <body class="text-slate-800 h-screen flex flex-col relative">
 
-    <!-- === HEADER === -->
     <nav class="bg-slate-900 text-white shadow-lg shrink-0">
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.28</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.29</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
@@ -67,25 +64,20 @@
         </div>
     </nav>
 
-    <!-- === MAIN LAYOUT === -->
     <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
         
-        <!-- === LEFT SIDEBAR (EDITOR) === -->
         <div class="w-full lg:w-96 bg-white border-r border-slate-200 overflow-y-auto shrink-0 z-10 shadow-xl">
             <div class="p-5 space-y-5">
                 
-                <!-- Date & Header -->
                 <div class="flex justify-between items-center border-b pb-4">
                     <h2 class="font-bold text-slate-700" id="editorTitle">Editor</h2>
                     <input type="date" id="entryDate" onchange="checkXIIIWindow()" class="bg-slate-50 border rounded px-2 py-1 text-xs font-medium text-slate-600 outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
-                <!-- Income Section -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Earnings</span>
                         <div class="flex space-x-1">
-                            <!-- Toggle Buttons -->
                             <button id="btnTog_rowQBP" onclick="toggleRow('rowQBP', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">QBP</button>
                             <button id="btnTog_rowOT" onclick="toggleRow('rowOT', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">OT</button>
                             <button id="btnTog_rowVac" onclick="toggleRow('rowVac', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">VAC</button>
@@ -94,36 +86,30 @@
                         </div>
                     </div>
 
-                    <!-- Inputs -->
                     <div class="space-y-2">
                         <div class="flex justify-between items-center"><label class="text-xs font-medium text-slate-600">Base Salary</label><input type="number" id="inpBase" oninput="calcTotal()" class="w-24 text-right border rounded px-2 py-1 text-sm outline-none focus:border-blue-500" placeholder="0.00"></div>
                         
-                        <!-- Hidden Inputs -->
                         <div id="rowQBP" class="hidden-row flex justify-between items-center bg-blue-50 p-1 rounded"><label class="text-xs font-bold text-blue-700">QBP Bonus</label><input type="number" id="inpQBP" oninput="calcTotal()" class="w-24 text-right border border-blue-200 text-sm" placeholder="0.00"></div>
                         <div id="rowOT" class="hidden-row flex justify-between items-center"><label class="text-xs font-medium">Overtime</label><input type="number" id="inpOT" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         <div id="rowVac" class="hidden-row flex justify-between items-center"><label class="text-xs font-medium">Vacation</label><input type="number" id="inpVac" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         <div id="rowXIII" class="hidden-row flex justify-between items-center bg-yellow-50 p-1 rounded"><label class="text-xs font-bold text-yellow-700">XIII Mes</label><input type="number" id="inpXIII" oninput="calcTotal()" class="w-24 text-right border border-yellow-200 text-sm" placeholder="0.00"></div>
                         <div id="rowExtra" class="flex justify-between items-center"><label class="text-xs font-medium text-slate-400">Extra/Misc</label><input type="number" id="inpExtra" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
                         
-                        <!-- GROSS SALARY -->
                         <div class="flex justify-between items-center pt-2 border-t mt-2 mb-2">
                             <span class="text-xs font-bold text-slate-500">GROSS SALARY</span>
                             <span id="dispSalTotal" class="font-bold text-lg text-blue-700">$0.00</span>
                         </div>
 
-                        <!-- GREP / HOME (Excluded from Gross) -->
                         <div id="rowGREP" class="hidden-row flex justify-between items-center border-t border-dashed pt-2"><label class="text-xs font-bold text-purple-700">GREP</label><input type="number" id="inpGREP" oninput="calcTotal()" class="w-24 text-right border bg-purple-50 text-sm" placeholder="0.00"></div>
                         <div class="flex justify-between items-center pt-1"><label class="text-xs font-medium text-emerald-600">Home Stipend</label><input type="number" id="inpHome" value="50.00" oninput="calcTotal()" class="w-24 text-right border border-emerald-100 text-sm" placeholder="0.00"></div>
                     </div>
                     
-                    <!-- TOTAL EARNINGS -->
                     <div class="flex justify-between items-center pt-2 border-t mt-2">
                         <span class="text-xs font-bold text-slate-800">TOTAL EARNINGS</span>
                         <span id="dispTotalEarnings" class="font-bold text-lg text-slate-800">$0.00</span>
                     </div>
                 </div>
 
-                <!-- Taxes -->
                 <div class="space-y-3 pt-2">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Taxes (Actual)</span>
                     <div class="grid grid-cols-2 gap-3">
@@ -133,18 +119,15 @@
                         <div id="taxRowGREP" class="hidden-row"><label class="block text-[10px] text-purple-600 mb-0.5">ISR GREP</label><input type="number" id="actISRGREP" oninput="calcTotal()" class="w-full text-right border rounded px-2 py-1 text-xs bg-purple-50"></div>
                     </div>
                     
-                    <!-- TOTAL TAXES -->
                     <div class="flex justify-between items-center pt-2 border-t mt-2">
                         <span class="text-xs font-bold text-slate-500">TOTAL TAXES</span>
                         <span id="dispTotalTaxes" class="font-bold text-base text-red-600">$0.00</span>
                     </div>
                 </div>
 
-                <!-- Other Deductions -->
                 <div class="space-y-2 pt-2">
                     <div class="flex justify-between items-center">
                          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deductions</span>
-                         <!-- Loan Toggle Menu -->
                          <div class="flex space-x-1">
                              <button onclick="toggleRow('rowLoan1', this)" id="btnTog_rowLoan1" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L1</button>
                              <button onclick="toggleRow('rowLoan2', this)" id="btnTog_rowLoan2" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L2</button>
@@ -157,7 +140,6 @@
                     <div class="space-y-1">
                         <div class="flex justify-between items-center"><label class="text-xs text-slate-600">Insurance</label><input type="number" id="inpIns" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
                         
-                        <!-- Fixed 5 Loans -->
                         <div id="rowLoan1" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 1</label><input type="number" id="inpLoan1" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
                         <div id="rowLoan2" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 2</label><input type="number" id="inpLoan2" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
                         <div id="rowLoan3" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 3</label><input type="number" id="inpLoan3" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
@@ -166,7 +148,6 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="mt-4 flex space-x-2">
                     <button id="btnCommit" onclick="commit()" class="flex-1 bg-slate-800 text-white font-bold py-3 rounded shadow hover:bg-slate-900 transition mt-4">Add Pay Stub</button>
                     <button id="btnCancel" onclick="cancelEdit()" class="hidden-row flex-none bg-red-100 text-red-600 font-bold py-3 px-4 rounded shadow hover:bg-red-200 transition mt-4">Cancel</button>
@@ -174,13 +155,10 @@
             </div>
         </div>
 
-        <!-- === RIGHT CONTENT (DASHBOARD) === -->
         <div class="flex-1 overflow-hidden flex flex-col bg-slate-50">
             
-            <!-- KPI DASHBOARD -->
             <div class="grid grid-cols-5 gap-4 p-6 shrink-0">
                 
-                <!-- 1. YTD CASH FLOW -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Cash Flow</div>
                     <table class="w-full text-xs">
@@ -195,19 +173,17 @@
                     </table>
                 </div>
 
-                <!-- 2. XIII ESTIMATOR (SMART V2) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col relative" id="kpiXIII">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1 flex justify-between">
                         <span>XIII Estimator</span>
-                        <button onclick="toggleDecInput()" class="text-blue-500 hover:text-blue-700" title="Set Dec '24 Carryover">⚙️</button>
+                        <button onclick="toggleDecInput()" class="text-blue-500 hover:text-blue-700" title="Set Previous Year Carryover">⚙️</button>
                     </div>
                     
-                    <!-- Config Panel (Hidden by default) -->
                     <div id="xiiiConfig" class="hidden-row absolute top-8 left-2 right-2 bg-white border border-slate-200 shadow-md p-2 rounded z-10">
-                        <label class="text-[10px] text-slate-500 block mb-1">Dec '24 Gross (Salary Only)</label>
-                        <input type="number" id="inpDec24Sal" class="w-full text-right border rounded px-1 py-0.5 text-xs mb-2" placeholder="0.00" onchange="refresh()">
-                        <label class="text-[10px] text-slate-500 block mb-1">Dec '24 GREP</label>
-                        <input type="number" id="inpDec24Grep" class="w-full text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00" onchange="refresh()">
+                        <label class="text-[10px] text-slate-500 block mb-1">Last Dec Gross (Salary Only)</label>
+                        <input type="number" id="inpLastDecSal" class="w-full text-right border rounded px-1 py-0.5 text-xs mb-2" placeholder="0.00" onchange="refresh()">
+                        <label class="text-[10px] text-slate-500 block mb-1">Last Dec GREP</label>
+                        <input type="number" id="inpLastDecGrep" class="w-full text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00" onchange="refresh()">
                     </div>
 
                     <div class="flex-1 flex flex-col justify-center space-y-2">
@@ -223,15 +199,12 @@
                     </div>
                 </div>
 
-                <!-- 3. YTD DEDUCTIONS BREAKDOWN (Conditional) -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col transition-opacity duration-300" id="cardDed">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Other Deductions</div>
                     <table class="w-full text-xs mt-1" id="kpiDedTable">
-                        <!-- Content populated by JS -->
-                    </table>
+                        </table>
                 </div>
 
-                <!-- 4. YTD ISR SALARY -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD ISR SALARY</div>
                     <div class="flex flex-1 items-center">
@@ -253,7 +226,6 @@
                     </div>
                 </div>
 
-                <!-- 5. YTD ISR GREP -->
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 opacity-50 transition-opacity flex flex-col" id="cardGrep">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD ISR GREP</div>
                     <div class="flex flex-1 items-center">
@@ -277,7 +249,6 @@
 
             </div>
 
-            <!-- TABLE CONTAINER -->
             <div class="flex-1 overflow-hidden px-6 pb-6 flex flex-col">
                 <div class="bg-white rounded-lg shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
                     <div class="p-3 bg-white border-b flex justify-between items-center shrink-0">
@@ -287,11 +258,9 @@
                     <div class="flex-1 overflow-auto custom-scroll relative">
                         <table class="w-full text-left border-collapse" id="mainTable">
                             <thead class="sticky top-0 z-20 shadow-sm">
-                                <!-- Headers Generated via JS -->
-                            </thead>
+                                </thead>
                             <tbody class="divide-y divide-slate-100 bg-white">
-                                <!-- Rows Generated via JS -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
@@ -299,7 +268,6 @@
         </div>
     </div>
 
-    <!-- === MODAL: ABOUT === -->
     <div id="aboutModal" class="hidden-row fixed inset-0 z-50 flex items-center justify-center modal-bg px-4">
         <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
             <button onclick="toggleModal('aboutModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -318,7 +286,7 @@
                 <p class="mb-2">It allows you to:</p>
                 <ul class="list-disc pl-5 mb-4 space-y-1">
                     <li><strong>Digitize your Pay Stubs:</strong> Input your data period-by-period.</li>
-                    <li><strong>Validate Deductions:</strong> Instantly compare the taxes deducted against the official Panama 2025 tax tables.</li>
+                    <li><strong>Validate Deductions:</strong> Instantly compare the taxes deducted against the official Panama tax tables.</li>
                     <li><strong>Visualize the "Why":</strong> See cumulative graphs that explain how your effective tax rate changes over time.</li>
                     <li><strong>Forecast:</strong> Understand how a future bonus might impact your net pay.</li>
                 </ul>
@@ -393,13 +361,12 @@
 
                 <h2 class="text-lg font-bold mt-6 mb-2">Disclaimer</h2>
                 <div class="p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
-                    This tool is for educational and validation purposes only. It is built based on the Panamanian Tax Code (Código Fiscal) as of 2025. While it strives for 100% accuracy, official payroll calculations may vary due to specific internal accounting practices. Always consult with HR for official disputes.
+                    This tool is for educational and validation purposes only. It is built based on the Panamanian Tax Code (Código Fiscal). While it strives for 100% accuracy, official payroll calculations may vary due to specific internal accounting practices. Always consult with HR for official disputes.
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- LOGIC -->
     <script>
         // --- HELPERS ---
         const fmt = n => n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -416,7 +383,7 @@
         const SALARY_IDS = ['inpBase','inpQBP','inpOT','inpVac','inpXIII','inpExtra'];
         const TAX_IDS = ['actSS','actSE','actISR','actISRGREP'];
         const RULES = { SS: 0.0975, SS_XIII: 0.0725, SE: 0.0125, ISR_SAL: [{t:0,r:0}, {t:11000,r:0.15}, {t:50000,r:0.25}], ISR_GREP: [{t:0,r:0.10}, {t:25000,r:0.15}] };
-        let dec24Sal = 0; let dec24Grep = 0;
+        let lastDecSal = 0; let lastDecGrep = 0;
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('entryDate').valueAsDate = new Date();
@@ -565,7 +532,7 @@
         // --- REFRESH LOGIC ---
         function refresh() {
             entries.sort((a,b) => parseDate(a.date) - parseDate(b.date));
-            dec24Sal = parseFloat(document.getElementById('inpDec24Sal').value || 0); dec24Grep = parseFloat(document.getElementById('inpDec24Grep').value || 0);
+            lastDecSal = parseFloat(document.getElementById('inpLastDecSal').value || 0); lastDecGrep = parseFloat(document.getElementById('inpLastDecGrep').value || 0);
 
             // Column Config
             const sums = { qbp:0, ot:0, vac:0, xiii:0, extra:0, grep:0, home:0, l1:0, l2:0, l3:0, l4:0, l5:0 };
@@ -651,37 +618,33 @@
                 tr += '</tr>'; tbody.insertAdjacentHTML('beforeend', tr);
             });
 
-            // Update KPIs (Same as v0.23 logic)
+            // Update KPIs
             document.getElementById('kpiCFSal').innerText = '$'+fmt(ytd.grossSal); document.getElementById('kpiCFGrep').innerText = '$'+fmt(ytd.grepTotal); document.getElementById('kpiCFHome').innerText = '$'+fmt(ytd.homeTotal); document.getElementById('kpiCFTotal').innerText = '$'+fmt(ytd.grossSal + ytd.grepTotal + ytd.homeTotal);
             document.getElementById('kpiCFTax').innerText = '-$'+fmt(ytd.totalTax); document.getElementById('kpiCFDed').innerText = '-$'+fmt(ytd.totalDed); document.getElementById('kpiCFNet').innerText = '$'+fmt(ytd.net);
 
-            // XIII Smart Logic (UPDATED: EXCLUDE current XIII from sum)
+            // XIII Smart Logic (UPDATED for Year Agnostic)
             const editorDateVal = document.getElementById('entryDate').value; let referenceDate = new Date(); if (editorDateVal) referenceDate = parseDate(editorDateVal);
             const m = referenceDate.getMonth(); const d = referenceDate.getDate(); const year = referenceDate.getFullYear();
             let xiiiStart, xiiiEnd, currentPeriod;
             if (m < 3 || (m===3 && d<=15)) { currentPeriod = "APRIL (1st)"; xiiiStart = new Date(year-1, 11, 16); xiiiEnd = new Date(year, 3, 15); } 
             else if (m < 7 || (m===7 && d<=15)) { currentPeriod = "AUGUST (2nd)"; xiiiStart = new Date(year, 3, 16); xiiiEnd = new Date(year, 7, 15); } 
             else { currentPeriod = "DECEMBER (3rd)"; xiiiStart = new Date(year, 7, 16); xiiiEnd = new Date(year, 11, 15); }
+            
             let xiiiSalSum = 0; let xiiiGrepSum = 0; let entryCountInWindow = 0; let firstEntryDate = null;
-            if (currentPeriod === "APRIL (1st)") { xiiiSalSum += dec24Sal; xiiiGrepSum += dec24Grep; }
+            if (currentPeriod === "APRIL (1st)") { xiiiSalSum += lastDecSal; xiiiGrepSum += lastDecGrep; }
             entries.forEach(e => { const eDate = parseDate(e.date); if (eDate >= xiiiStart && eDate <= xiiiEnd) { 
-                // Sum components (exclude XIII itself from base)
                 xiiiSalSum += (e.base + e.ot + e.vac + e.extra); 
-                // FIX: Exclude GREP if this is an XIII payment event
-                // Heuristic: If XIII column > 0, assume this row is the XIII bonus payment
                 if (e.xiii > 0) {
-                     // Do NOT add e.grep to sum, as it is likely the XIII GREP bonus
+                     // Exclude XIII from sum
                 } else {
                      xiiiGrepSum += e.grep;
                 }
-                
                 entryCountInWindow++; if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate; 
             } });
             
             // Smart Projection
             let isProjected = false;
-            // (Same projection logic as v0.27)
-             if (currentPeriod === "APRIL (1st)" && dec24Sal === 0 && entryCountInWindow > 0) {
+             if (currentPeriod === "APRIL (1st)" && lastDecSal === 0 && entryCountInWindow > 0) {
                 const windowStart = new Date(year-1, 11, 16); const daysDiff = (firstEntryDate - windowStart) / (1000 * 60 * 60 * 24);
                 if (daysDiff > 10) { const missingChecks = Math.floor(daysDiff / 14); if (missingChecks > 0) { const avgSal = xiiiSalSum / entryCountInWindow; const avgGrep = xiiiGrepSum / entryCountInWindow; xiiiSalSum += (avgSal * missingChecks); xiiiGrepSum += (avgGrep * missingChecks); isProjected = true; } }
             }
@@ -702,7 +665,6 @@
             const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP); document.getElementById('kpiGrepPaidVal').innerText = '$'+fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$'+fmt(legGrepTax); document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase); renderMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg, (i)=>chartGrepInstance=i);
             if (!hasGrep) document.getElementById('cardGrep').classList.add('opacity-50'); else document.getElementById('cardGrep').classList.remove('opacity-50');
             
-            // Re-highlight if editing
             if (editingId) {
                 const sortIdx = entries.findIndex(x => x.id === editingId);
                 if (sortIdx !== -1) {
@@ -716,13 +678,16 @@
         function renderMicroChart(canvasId, instance, paidData, legData, setInstance) { const ctx = document.getElementById(canvasId); if(instance) instance.destroy(); const newInst = new Chart(ctx, { type: 'line', data: { labels: paidData.map(()=>''), datasets: [ { data:paidData, borderColor:'#ef4444', borderWidth:2, pointRadius:0, tension:0.3 }, { data:legData, borderColor:'#10b981', borderWidth:2, borderDash:[2,2], pointRadius:0, tension:0.3 } ] }, options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{enabled:false}}, scales:{x:{display:false}, y:{display:false}}, layout: { padding: 5 } } }); setInstance(newInst); }
 
         function exportCSV(){
-            if(!entries.length) return alert("No Data");
+            if(!entries.length && lastDecSal === 0 && lastDecGrep === 0) return alert("No Data");
             const h=['ID','Date','Base','QBP','OT','Vac','XIII','Extra','GREP','Home','SS','SE','ISR_S','ISR_G','Ins','Loan1','Loan2','Loan3','Loan4','Loan5'];
             const r=entries.map(e=> {
                 const d = parseDate(e.date);
                 const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
                 return [e.id,iso,e.base,e.qbp,e.ot,e.vac,e.xiii,e.extra,e.grep,e.home,e.actSS,e.actSE,e.actISR,e.actISRGREP,e.ins,e.loan1,e.loan2,e.loan3,e.loan4,e.loan5];
             });
+            // APPEND CONFIG ROW
+            r.push(['META','CONFIG', lastDecSal, lastDecGrep]);
+            
             const csv="data:text/csv;charset=utf-8,"+h.join(",")+"\n"+r.map(v=>v.join(",")).join("\n");
             const l=document.createElement("a"); l.href=encodeURI(csv); l.download="payroll.csv"; l.click();
         }
@@ -732,13 +697,21 @@
             r.onload=e=>{
                 const l=e.target.result.split("\n");
                 for(let i=1;i<l.length;i++){
-                    const c=l[i].split(","); if(c.length<15) continue;
+                    const c=l[i].split(",");
+                    
+                    // META CONFIG CHECK
+                    if(c[0] === 'META' && c[1] === 'CONFIG') {
+                        document.getElementById('inpLastDecSal').value = c[2] || 0;
+                        document.getElementById('inpLastDecGrep').value = c[3] || 0;
+                        continue;
+                    }
+
+                    if(c.length<15) continue;
                     let newId = parseInt(c[0]);
                     if (entries.some(ex => ex.id === newId)) newId = generateID();
                     
-                    // Backward Compat: Map old "Loans" (idx 15) to Loan 1 if newer columns missing
                     let l1=0,l2=0,l3=0,l4=0,l5=0;
-                    if(c.length <= 16) { l1 = parseFloat(c[15]||0); } // Old Format
+                    if(c.length <= 16) { l1 = parseFloat(c[15]||0); }
                     else { l1=parseFloat(c[15]||0); l2=parseFloat(c[16]||0); l3=parseFloat(c[17]||0); l4=parseFloat(c[18]||0); l5=parseFloat(c[19]||0); }
 
                     entries.push({
