@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.31</title>
+    <title>Payroll Compass | v0.32</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -41,7 +41,7 @@
         /* Edit Mode Highlight */
         .editing-row { background-color: #fef9c3 !important; }
 
-        /* [NEW] Refactored Active State for Toggle Buttons */
+        /* Toggle Button Active State */
         .btn-active {
             background-color: #eff6ff; /* bg-blue-50 */
             color: #2563eb; /* text-blue-600 */
@@ -56,7 +56,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.31</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.32</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <a href="https://github.com/gmoorec/payroll-compass" target="_blank" class="text-slate-400 hover:text-white transition" title="View Source Code on GitHub">
@@ -406,7 +406,8 @@
         
         const SALARY_IDS = ['inpBase','inpQBP','inpOT','inpVac','inpXIII','inpExtra'];
         const TAX_IDS = ['actSS','actSE','actISR','actISRGREP'];
-        const RULES = { SS: 0.0975, SS_XIII: 0.0725, SE: 0.0125, ISR_SAL: [{t:0,r:0}, {t:11000,r:0.15}, {t:50000,r:0.25}], ISR_GREP: [{t:0,r:0.10}, {t:25000,r:0.15}] };
+        // [UPDATED] Added SS_GREP (9.00%)
+        const RULES = { SS: 0.0975, SS_GREP: 0.09, SE: 0.0125, ISR_SAL: [{t:0,r:0}, {t:11000,r:0.15}, {t:50000,r:0.25}], ISR_GREP: [{t:0,r:0.10}, {t:25000,r:0.15}] };
         let lastDecSal = 0; let lastDecGrep = 0;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -414,7 +415,7 @@
             checkXIIIWindow();
         });
 
-        // --- UI LOGIC (REFACTORED) ---
+        // --- UI LOGIC ---
         function checkXIIIWindow() {
             const dateVal = document.getElementById('entryDate').value;
             if (!dateVal) return;
@@ -425,7 +426,6 @@
             if(isWin) { btn.classList.remove('hidden-row'); } else { btn.classList.add('hidden-row'); toggleRow('rowXIII', btn, false); }
         }
 
-        // Optimized Toggle using CSS Class
         function toggleRow(rowId, btn, force) {
             const el = document.getElementById(rowId);
             const isHidden = el.classList.contains('hidden-row');
@@ -439,8 +439,6 @@
                 el.classList.add('hidden-row');
                 btn.classList.remove('btn-active');
                 if (rowId === 'rowGREP') document.getElementById('taxRowGREP').classList.add('hidden-row');
-                
-                // Reset input value when hiding
                 const inp = el.querySelector('input');
                 if (inp) inp.value = '';
             }
@@ -621,7 +619,27 @@
                     else if(c.id==='gross') { val='$'+fmt(salGross); css+=' font-bold text-blue-700 border-l-2 border-r-2 border-slate-100'; }
                     else if(c.id==='grep') { if(e.grep>0) val='$'+fmt(e.grep); css+=' text-purple-700 border-r-2'; }
                     else if(c.id==='home') { if(e.home>0) val='$'+fmt(e.home); css+=' text-emerald-700 border-r-2'; }
-                    else if(c.id==='ss') { val = `<span class="cell-val">$${fmt(e.actSS)}</span><span class="cell-pct">${pct(e.actSS, salGross)}</span>`; css+=' border-l-2 border-orange-100'; }
+                    // [UPDATED] Smart Tooltip Logic for SS
+                    else if(c.id==='ss') { 
+                        let valStr = '$' + fmt(e.actSS);
+                        let pctVal = 0;
+                        let tooltip = "";
+                        let decoration = "";
+                        
+                        if (e.grep > 0) {
+                            const theorySal = salGross * RULES.SS;
+                            const theoryGrep = e.grep * RULES.SS_GREP;
+                            tooltip = `Salary: $${fmt(theorySal)} (9.75%) | GREP: $${fmt(theoryGrep)} (9.00%)`;
+                            decoration = "underline decoration-dashed decoration-slate-400 cursor-help";
+                            // Blended Rate Calculation
+                            pctVal = pct(e.actSS, salGross + e.grep);
+                        } else {
+                            pctVal = pct(e.actSS, salGross);
+                        }
+                        
+                        val = `<span class="cell-val ${decoration}" title="${tooltip}">${valStr}</span><span class="cell-pct">${pctVal}</span>`; 
+                        css+=' border-l-2 border-orange-100'; 
+                    }
                     else if(c.id==='se') { val = `<span class="cell-val">$${fmt(e.actSE)}</span><span class="cell-pct">${pct(e.actSE, e.base+e.ot+e.vac+e.extra)}</span>`; }
                     else if(c.id==='isrS') { val = `<span class="cell-val">$${fmt(e.actISR)}</span><span class="cell-pct">${pct(e.actISR, salGross)}</span>`; }
                     else if(c.id==='isrG') { val = `<span class="cell-val">$${fmt(e.actISRGREP)}</span><span class="cell-pct">${pct(e.actISRGREP, e.grep)}</span>`; }
@@ -696,7 +714,6 @@
 
         function parseDate(dateStr) { if (!dateStr) return new Date(); if (dateStr.includes('/')) { const [m, d, y] = dateStr.split('/').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } else if (dateStr.includes('-')) { const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } return new Date(dateStr); }
         
-        // [NEW] Optimized Chart Logic: Update instead of Destroy
         function updateMicroChart(canvasId, instance, paidData, legData) {
             // Update Existing
             if (instance) {
@@ -742,7 +759,6 @@
             const l=document.createElement("a"); l.href=encodeURI(csv); l.download="payroll.csv"; l.click();
         }
         
-        // [NEW] Simplified Import Logic
         function importCSV(inp){
             const f=inp.files[0]; if(!f) return;
             const r=new FileReader();
