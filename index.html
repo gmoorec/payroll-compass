@@ -715,6 +715,7 @@
             <!-- Tab Navigation -->
             <div class="tab-nav">
                 <button class="tab-btn active" onclick="switchTab('about')">About</button>
+                <button class="tab-btn" onclick="switchTab('howtouse')">How to Use</button>
                 <button class="tab-btn" onclick="switchTab('taxrules')">Tax Rules</button>
                 <button class="tab-btn" onclick="switchTab('examples')">Examples</button>
                 <button class="tab-btn" onclick="switchTab('faq')">FAQ</button>
@@ -810,90 +811,6 @@
                     <p class="mb-4">You can disconnect your internet after loading the page. The tool will continue to
                         function perfectly, proving that it does not need to "phone home" to work.</p>
 
-                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🧑‍🏫</span> How to Use
-                    </h2>
-                    <p class="mb-2 text-sm bg-blue-50 border-l-4 border-blue-400 p-3 rounded">💡 <strong>Tip:</strong>
-                        Hover over the info icons (ℹ️) next to tax fields for quick reference on rates and calculation
-                        rules.</p>
-
-                    <h4 class="text-md font-bold mt-2 mb-2">A. The Editor (Left Panel)</h4>
-                    <ul class="list-disc pl-5 mb-4 space-y-1">
-                        <li><strong>Date:</strong> Select the date of your pay stub.
-                            <div class="mt-1 p-2 bg-amber-50 border-l-2 border-amber-400 text-xs text-amber-700">
-                                <strong>Important:</strong> Start your ledger with <strong>JANUARY</strong> of the
-                                current year. Do not enter pay stubs from the previous year as rows.<br>
-                                To configure the XIII Month carryover, use the <strong>XIII Estimator configuration
-                                    (⚙️)</strong> and enter the values from your <strong>LAST</strong> pay stub of
-                                December (Dec 16-31), not the total for the month.
-                            </div>
-                        </li>
-                        <li><strong>Income:</strong> Enter your Base Salary.
-                            <ul class="list-none pl-4 mt-1 text-slate-500 italic">
-                                <li>- Use the toggle buttons <strong>[QBP], [OT], [VAC]</strong> to reveal inputs for
-                                    variable income.</li>
-                                <li>- <strong>[XIII]:</strong> This toggle only appears if the selected date is within a
-                                    valid payment window (Apr 1-15, Aug 1-15, Dec 1-15).</li>
-                                <li>- <strong>Totals:</strong> The editor updates "GROSS SALARY" (Taxable Base) and
-                                    "TOTAL EARNINGS" (Base + GREP + Home) in real-time.</li>
-                            </ul>
-                        </li>
-                        <li><strong>Taxes:</strong> Enter the actual tax amounts shown on your physical pay stub (SS,
-                            SE, ISR).</li>
-                        <li><strong>Deductions:</strong>
-                            <ul class="list-none pl-4 mt-1 text-slate-500 italic">
-                                <li>- <strong>Insurance:</strong> Use this entry to document additional Insurance
-                                    deductions.</li>
-                                <li>- <strong>Loans:</strong> Use the toggle buttons (L1 - L5) to manage up to 5
-                                    distinct loan slots.</li>
-                            </ul>
-                        </li>
-                        <li><strong>Actions:</strong>
-                            <ul class="list-none pl-4 mt-1 text-slate-500 italic">
-                                <li>- <strong>Add Pay Stub:</strong> Commits the data to the ledger.</li>
-                                <li>- <strong>Edit:</strong> Click the ✏️ pencil icon on a row to safely modify it.</li>
-                            </ul>
-                        </li>
-                    </ul>
-
-                    <h4 class="text-md font-bold mt-4 mb-2">B. Interpreting the Data (Right Panel)</h4>
-                    <p class="mb-2 font-semibold">The Dashboard (KPIs)</p>
-                    <ul class="list-disc pl-5 mb-4 space-y-1">
-                        <li><strong>YTD Cash Flow:</strong> A waterfall view showing your Total Income minus Taxes and
-                            Deductions, resulting in your Net Pay.</li>
-                        <li><strong>XIII Estimator:</strong> A smart projection of your next 13th Month payment. Use the
-                            gear icon ⚙️ to set carryover income from Dec 16-31 of the previous year for accurate April
-                            projections.</li>
-                        <li><strong>YTD Deductions:</strong> Breakdown of Insurance and individual Loans.</li>
-                        <li><strong>ISR Cards:</strong>
-                            <ul class="list-disc pl-5 mt-1">
-                                <li><strong>Paid:</strong> What the company took out.</li>
-                                <li><strong>Legal:</strong> What the strict annual tax table says you owe.</li>
-                                <li><strong>The Graph:</strong> If the <strong>Red Line</strong> (Paid) is above the
-                                    <strong>Green Line</strong> (Legal), you are currently "ahead" on taxes and might
-                                    see lower deductions later in the year.
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <p class="mb-2 font-semibold">The Ledger (Table)</p>
-                    <ul class="list-disc pl-5 mb-4 space-y-1">
-                        <li><strong>Granularity:</strong> Every income type (OT, Vac, etc.) gets its own column if used.
-                        </li>
-                        <li><strong>Effective Rates:</strong> Below every tax dollar amount, you will see the Effective
-                            %. This helps identify exactly which rate was applied to that specific check.</li>
-                        <li><strong>YTD Section:</strong> The right side of the table shows running totals for the year.
-                        </li>
-                    </ul>
-
-                    <h4 class="text-md font-bold mt-4 mb-2">C. Saving Your Data</h4>
-                    <p class="mb-2">Since we don't store your data, you must manage it yourself:</p>
-                    <ul class="list-disc pl-5 mb-4 space-y-1">
-                        <li>At the top right corner, click the <strong>[Export]</strong> button to save a file to your
-                            computer.</li>
-                        <li>Next time you visit, click the <strong>[Import]</strong> button and select that file to pick
-                            up where you left off.</li>
-                    </ul>
-
                     <h2 class="text-lg font-bold mt-6 mb-2">Disclaimer</h2>
                     <div class="p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
                         This tool is for educational and validation purposes only. It is built based on the Panamanian
@@ -914,6 +831,90 @@
                         </a>
                     </div>
                 </div>
+            </div>
+
+            <!-- How to Use Tab -->
+            <div id="tab-howtouse" class="tab-content">
+                <h2 class="text-xl font-bold mb-4 text-slate-800">🧑‍🏫 How to Use</h2>
+                <p class="mb-4 text-sm bg-blue-50 border-l-4 border-blue-400 p-3 rounded">💡 <strong>Pro Tip:</strong>
+                    Hover over the info icons (ℹ️) throughout the interface for instant explanations.</p>
+
+                <h3 class="text-lg font-semibold mt-6 mb-3 text-slate-700">📝 Getting Started</h3>
+                <div class="p-3 bg-amber-50 border-l-4 border-amber-500 mb-4 text-sm">
+                    <strong>⚠️ Important:</strong> Always start your ledger with <strong>JANUARY</strong> of the current
+                    year.
+                    Do not enter previous year pay stubs as rows. For accurate XIII Month projections, configure
+                    carryover
+                    income using the gear icon (⚙️) in the XIII Estimator card.
+                </div>
+
+                <h3 class="text-lg font-semibold mt-6 mb-3 text-slate-700">⬅️ Left Panel: The Editor</h3>
+
+                <h4 class="text-md font-bold mt-4 mb-2">1. Date</h4>
+                <p class="mb-3 text-sm">Select the pay stub date. The <strong>[XIII]</strong> toggle appears
+                    automatically during valid payment windows (Apr 1-15, Aug 1-15, Dec 1-15).</p>
+
+                <h4 class="text-md font-bold mt-4 mb-2">2. Income</h4>
+                <ul class="list-disc pl-6 mb-3 space-y-1 text-sm">
+                    <li>Enter your <strong>Base Salary</strong> (required field)</li>
+                    <li>Toggle <strong>[QBP]</strong>, <strong>[OT]</strong>, or <strong>[VAC]</strong> to add variable
+                        income</li>
+                    <li>Watch totals update automatically in the summary section</li>
+                </ul>
+
+                <h4 class="text-md font-bold mt-4 mb-2">3. Taxes (Actual Deductions)</h4>
+                <p class="mb-3 text-sm">Copy the tax amounts directly from your physical pay stub. The calculator will
+                    compare these against legal formulas.</p>
+
+                <h4 class="text-md font-bold mt-4 mb-2">4. Deductions</h4>
+                <ul class="list-disc pl-6 mb-3 space-y-1 text-sm">
+                    <li><strong>Insurance:</strong> Additional family coverage deductions</li>
+                    <li><strong>Loans:</strong> Toggle slots L1-L5 for up to 5 active loans</li>
+                </ul>
+
+                <h4 class="text-md font-bold mt-4 mb-2">5. Actions</h4>
+                <ul class="list-disc pl-6 mb-4 space-y-1 text-sm">
+                    <li><strong>Add Pay Stub:</strong> Saves entry to ledger → clears form for next entry</li>
+                    <li><strong>Edit (✏️):</strong> Click pencil icon in ledger row to modify safely</li>
+                </ul>
+
+                <h3 class="text-lg font-semibold mt-6 mb-3 text-slate-700">➡️ Right Panel: Dashboard & Ledger</h3>
+
+                <h4 class="text-md font-bold mt-4 mb-2">📊 Key Metrics</h4>
+                <ul class="list-disc pl-6 mb-3 space-y-1 text-sm">
+                    <li><strong>YTD Cash Flow:</strong> Visual breakdown from gross income to net pay</li>
+                    <li><strong>XIII Estimator:</strong> Smart projection of your next XIII Month payment (click ⚙️ to
+                        configure Dec carryover)</li>
+                    <li><strong>ISR Cards:</strong> Compare <span class="text-red-600 font-semibold">Paid</span> (what
+                        payroll deducted) vs. <span class="text-green-600 font-semibold">Legal</span> (what tax code
+                        requires)</li>
+                </ul>
+
+                <h4 class="text-md font-bold mt-4 mb-2">📋 The Ledger Table</h4>
+                <ul class="list-disc pl-6 mb-3 space-y-1 text-sm">
+                    <li><strong>Dynamic Columns:</strong> Only income types you use appear</li>
+                    <li><strong>Effective Rates:</strong> Percentages below dollar amounts show actual tax rates applied
+                    </li>
+                    <li><strong>YTD Section:</strong> Right side shows cumulative year-to-date totals</li>
+                </ul>
+
+                <h3 class="text-lg font-semibold mt-6 mb-3 text-slate-700">💾 Managing Your Data</h3>
+                <div class="p-3 bg-blue-50 border-l-4 border-blue-400 mb-4 text-sm">
+                    <p class="mb-2">Since nothing is stored on any server, <strong>you</strong> control your data:</p>
+                    <ul class="list-disc pl-6 space-y-1">
+                        <li><strong>Export:</strong> Top-right button → saves CSV file to your computer</li>
+                        <li><strong>Import:</strong> Select your previously exported file to restore session</li>
+                        <li><strong>⚠️ Refresh = Loss:</strong> Page refresh clears everything unless you export first
+                        </li>
+                    </ul>
+                </div>
+
+                <h3 class="text-lg font-semibold mt-6 mb-3 text-slate-700">📚 Quick Reference</h3>
+                <ul class="list-disc pl-6 mb-4 space-y-1 text-sm">
+                    <li><strong>Tax Rules Tab:</strong> See all Panama tax rates and brackets</li>
+                    <li><strong>Examples Tab:</strong> Common scenarios explained step-by-step</li>
+                    <li><strong>FAQ Tab:</strong> Answers to frequent questions</li>
+                </ul>
             </div>
 
             <!-- Tax Rules Tab (NEW) -->
