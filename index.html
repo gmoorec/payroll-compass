@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.34</title>
+    <title>Payroll Compass</title><!-- Version auto-populated by updateVersion() -->
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -188,7 +188,8 @@
             }
         }
 
-        /* Info Icon Styles */
+
+        /* Info Icon Styles with Custom Tooltips */
         .info-icon {
             cursor: help;
             color: #94a3b8;
@@ -196,13 +197,109 @@
             margin-left: 3px;
             display: inline-block;
             transition: color 0.2s;
+            position: relative;
         }
 
         .info-icon:hover {
             color: #3b82f6;
         }
 
-        /* Tax Tables Styling */
+        /* Custom Tooltip */
+        .info-icon::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 50%;
+            bottom: 120%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            line-height: 1.4;
+            max-width: 280px;
+            white-space: normal;
+        }
+
+        .info-icon:hover::after {
+            opacity: 1;
+        }
+
+        /* Tooltip Arrow */
+        .info-icon::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 110%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #1e293b;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .info-icon:hover::before {
+            opacity: 1;
+        }
+
+
+        /* Ledger Table Cell Tooltips (for SS and YTD SS) */
+        .ledger-tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .ledger-tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 50%;
+            bottom: 120%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            line-height: 1.4;
+        }
+
+        .ledger-tooltip:hover::after {
+            opacity: 1;
+        }
+
+        .ledger-tooltip::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 110%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #1e293b;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .ledger-tooltip:hover::before {
+            opacity: 1;
+        }
+
+
         .tax-table {
             width: 100%;
             border-collapse: collapse;
@@ -273,7 +370,8 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.34</span>
+                <span
+                    class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded"></span><!-- Version auto-populated by updateVersion() -->
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <a href="https://github.com/gmoorec/payroll-compass" target="_blank"
@@ -386,20 +484,20 @@
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Taxes (Actual)</span>
                     <div class="grid grid-cols-2 gap-3">
                         <div><label class="block text-[10px] text-slate-500 mb-0.5">S.S. <span class="info-icon"
-                                    title="Social Security: 9.75% on Base Salary, 9.00% on GREP, 7.25% on XIII Month">ℹ️</span></label><input
+                                    data-tooltip="Social Security: 9.75% on Base Salary, 9.00% on GREP, 7.25% on XIII Month">ℹ️</span></label><input
                                 type="number" id="actSS" oninput="calcTotal()"
                                 class="w-full text-right border rounded px-2 py-1 text-xs"></div>
                         <div><label class="block text-[10px] text-slate-500 mb-0.5">S.E. <span class="info-icon"
-                                    title="Educational Tax: 1.25% on Base + Overtime + Vacation + Extra (excludes GREP, Home, Bonuses)">ℹ️</span></label><input
+                                    data-tooltip="Educational Tax: 1.25% on Base + Overtime + Vacation + Extra (excludes GREP, Home, Bonuses)">ℹ️</span></label><input
                                 type="number" id="actSE" oninput="calcTotal()"
                                 class="w-full text-right border rounded px-2 py-1 text-xs"></div>
                         <div><label class="block text-[10px] text-slate-500 mb-0.5">ISR Salary <span class="info-icon"
-                                    title="Progressive tax on cumulative yearly salary. Brackets: $0-11k (0%), $11k-50k (15%), $50k+ (25%). Click Tax Rules tab for details.">ℹ️</span></label><input
+                                    data-tooltip="Progressive tax on cumulative yearly salary. Brackets: $0-11k (0%), $11k-50k (15%), $50k+ (25%)">ℹ️</span></label><input
                                 type="number" id="actISR" oninput="calcTotal()"
                                 class="w-full text-right border rounded px-2 py-1 text-xs"></div>
                         <div id="taxRowGREP" class="hidden-row"><label
                                 class="block text-[10px] text-purple-600 mb-0.5">ISR GREP <span class="info-icon"
-                                    title="Progressive tax on cumulative yearly GREP. Brackets: $0-25k (10%), $25k+ (15%). Click Tax Rules tab for details.">ℹ️</span></label><input
+                                    data-tooltip="Progressive tax on cumulative yearly GREP. Brackets: $0-25k (10%), $25k+ (15%)">ℹ️</span></label><input
                                 type="number" id="actISRGREP" oninput="calcTotal()"
                                 class="w-full text-right border rounded px-2 py-1 text-xs bg-purple-50"></div>
                     </div>
@@ -629,29 +727,66 @@
                     <h4 class="text-sm font-medium text-slate-500 mb-6">A private, client-side tool for validating
                         Panamanian payroll deductions.</h4>
 
-                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">😵‍💫</span> The
-                        Problem</h2>
-                    <p class="mb-4">Payroll transparency can be a challenge. Employees often struggle to understand why
-                        their tax deductions fluctuate throughout the year, especially when variable income (Bonuses,
-                        Overtime, XIII Month) is involved.</p>
-                    <p class="mb-4">Standard pay stubs provide a snapshot of a single moment, but they rarely explain
-                        the context of how progressive taxes (like ISR) are calculated on a cumulative basis. This leads
-                        to confusion, "sticker shock" during bonus months, and unnecessary friction between staff and
-                        management.</p>
-
-                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🎯</span> The Solution
+                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🎯</span> The Purpose
                     </h2>
-                    <p class="mb-4">Payroll Compass is a web-based calculator designed to bridge the gap between "What
-                        Payroll Deducted" and "What the Law Says."</p>
-                    <p class="mb-2">It allows you to:</p>
+                    <p class="mb-4">Understanding your paycheck can sometimes feel complex, especially when dealing with
+                        variable income components like bonuses, overtime, or the XIII Month payment. While your pay
+                        stub provides
+                        essential transaction details for each pay period, it can be challenging to visualize the "big
+                        picture" of
+                        how your cumulative year-to-date (YTD) income affects progressive taxes like ISR.</p>
+                    <p class="mb-4">Payroll Compass is designed to complement the work your payroll department does by
+                        providing
+                        <strong>visual clarity and year-long projection capabilities</strong>. This tool helps you see
+                        beyond a single
+                        pay stub and understand the full-year tax trajectory—something that's difficult to convey in a
+                        standard
+                        biweekly pay statement.
+                    </p>
+
+                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">💡</span> How It Helps
+                    </h2>
+                    <p class="mb-2">This calculator serves as a <strong>validation and education tool</strong> that
+                        allows you to:</p>
                     <ul class="list-disc pl-5 mb-4 space-y-1">
-                        <li><strong>Digitize your Pay Stubs:</strong> Input your data period-by-period.</li>
-                        <li><strong>Validate Deductions:</strong> Instantly compare the taxes deducted against the
-                            official Panama tax tables.</li>
-                        <li><strong>Visualize the "Why":</strong> See cumulative graphs that explain how your effective
-                            tax rate changes over time.</li>
-                        <li><strong>Forecast:</strong> Understand how a future bonus might impact your net pay.</li>
+                        <li><strong>Visualize the Full Year:</strong> See how your cumulative income and tax obligations
+                            evolve
+                            month-by-month, rather than viewing each paycheck in isolation.</li>
+                        <li><strong>Understand Progressive Taxation:</strong> Learn why your ISR deductions may feel
+                            "aggressive"
+                            in months with bonuses or higher income, and how they naturally ease off toward year-end as
+                            your
+                            YTD totals stabilize.</li>
+                        <li><strong>Validate Accuracy:</strong> Compare your actual deductions against the official
+                            Panamanian
+                            tax code formulas to confirm everything aligns with legal requirements.</li>
+                        <li><strong>Anticipate Cash Flow:</strong> Discover how year-end tax adjustments often result in
+                            higher
+                            net pay during the final pay periods—perfect timing for holiday shopping or year-end
+                            expenses.</li>
                     </ul>
+
+                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center text-blue-600"><span class="mr-2">🤝</span>
+                        Payroll Collaboration</h2>
+                    <p class="mb-4">This tool is designed to <strong>support and complement</strong> the excellent work
+                        of
+                        payroll departments. Payroll teams use sophisticated projection algorithms to ensure tax
+                        compliance
+                        throughout the year. These algorithms may withhold conservatively during high-income months
+                        (like when
+                        bonuses or XIII Month payments are issued) to prevent year-end tax shortfalls.</p>
+                    <p class="mb-4">By understanding this year-long view, you can appreciate that what might initially
+                        seem like
+                        a larger-than-expected deduction is actually a prudent measure that "trues up" by year-end. In
+                        fact, many
+                        employees notice increased take-home pay in November and December as cumulative taxes align
+                        precisely with
+                        legal obligations—leaving a bit of extra cash on hand for the holidays.</p>
+                    <p class="mb-4 text-sm italic text-slate-600">We encourage employees to use this calculator
+                        alongside their
+                        pay stubs, and to reach out to their payroll department with any questions. The goal is
+                        transparency,
+                        understanding, and confidence in the payroll process.</p>
 
                     <h2 class="text-lg font-bold mt-6 mb-2 flex items-center text-emerald-600"><span
                             class="mr-2">🔒</span> Privacy & Data Security</h2>
@@ -664,7 +799,7 @@
                             name, or your financial data.</li>
                         <li><strong>No Transmission:</strong> When you click "Add Pay Stub," data moves from your
                             keyboard to your browser's temporary memory (RAM). It is NEVER sent over the internet.
-                            <ul class="list-none pl4 mt-1 text-slate-500 italic">
+                            <ul class="list-none pl-4 mt-1 text-slate-500 italic">
                                 <li>- The same is true when you "Import" your CSV backup file.</li>
                             </ul>
                         </li>
@@ -735,7 +870,8 @@
                                 <li><strong>Legal:</strong> What the strict annual tax table says you owe.</li>
                                 <li><strong>The Graph:</strong> If the <strong>Red Line</strong> (Paid) is above the
                                     <strong>Green Line</strong> (Legal), you are currently "ahead" on taxes and might
-                                    see lower deductions later in the year.</li>
+                                    see lower deductions later in the year.
+                                </li>
                             </ul>
                         </li>
                     </ul>
@@ -809,7 +945,8 @@
                         <tr>
                             <td>XIII Month (13th Month)</td>
                             <td class="font-bold text-yellow-700">7.25%</td>
-                            <td>Special reduced rate for year-end bonus</td>
+                            <td>Panamanian labor law rate for the 3 annual XIII Month payments (April, August, December)
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -893,9 +1030,11 @@
                     <div class="tax-example-title">Example 1: Base Salary Only (Simple Case)</div>
                     <div class="tax-example-step"><strong>Income:</strong> Base Salary = $2,000</div>
                     <div class="tax-example-step"><strong>SS Calculation:</strong> $2,000 × 9.75% =
-                        <strong>$195.00</strong></div>
+                        <strong>$195.00</strong>
+                    </div>
                     <div class="tax-example-step"><strong>SE Calculation:</strong> $2,000 × 1.25% =
-                        <strong>$25.00</strong></div>
+                        <strong>$25.00</strong>
+                    </div>
                     <div class="tax-example-step"><strong>ISR:</strong> Depends on YTD cumulative (see progressive
                         brackets)</div>
                     <div class="tax-example-result">Total Deductions (SS + SE + ISR): $195.00 + $25.00 + ISR</div>
@@ -909,7 +1048,8 @@
                     <div class="tax-example-step ml-4">• GREP: $500 × 9.00% = $45.00</div>
                     <div class="tax-example-step ml-4">• <strong>Total SS: $240.00</strong></div>
                     <div class="tax-example-step"><strong>SE Calculation:</strong> $2,000 × 1.25% =
-                        <strong>$25.00</strong> (GREP excluded)</div>
+                        <strong>$25.00</strong> (GREP excluded)
+                    </div>
                     <div class="tax-example-step"><strong>ISR:</strong> Separate calculations for Salary ISR and GREP
                         ISR</div>
                     <div class="tax-example-result">Note: GREP uses different rates for both SS (9.00%) and ISR
@@ -917,18 +1057,32 @@
                 </div>
 
                 <div class="tax-example">
-                    <div class="tax-example-title">Example 3: Base + GREP + XIII Month (Complex Case)</div>
-                    <div class="tax-example-step"><strong>Income:</strong> Base = $2,000, GREP = $500, XIII = $1,500
+                    <div class="tax-example-title">Example 3: XIII Month Payment Only (Special Case)</div>
+                    <div class="tax-example-step"><strong>Scenario:</strong> Separate XIII Month pay stub (typical
+                        payroll practice)
+                    </div>
+                    <div class="tax-example-step"><strong>Income:</strong> XIII Salary = $1,500, XIII GREP = $400
+                    </div>
+                    <div class="tax-example-step"><strong>Note:</strong> XIII amounts are calculated by averaging income
+                        over
+                        the qualifying period (e.g., Dec 16 - Apr 15) ÷ 12
                     </div>
                     <div class="tax-example-step"><strong>SS Calculation:</strong></div>
-                    <div class="tax-example-step ml-4">• Base: $2,000 × 9.75% = $195.00</div>
-                    <div class="tax-example-step ml-4">• GREP: $500 × 9.00% = $45.00</div>
-                    <div class="tax-example-step ml-4">• XIII: $1,500 × 7.25% = $108.75</div>
-                    <div class="tax-example-step ml-4">• <strong>Total SS: $348.75</strong></div>
-                    <div class="tax-example-step"><strong>SE Calculation:</strong> $2,000 × 1.25% =
-                        <strong>$25.00</strong> (XIII & GREP excluded)</div>
-                    <div class="tax-example-result">Key: XIII Month gets special reduced SS rate (7.25%) and may have
-                        different ISR treatment</div>
+                    <div class="tax-example-step ml-4">• XIII Salary: $1,500 × 7.25% = $108.75</div>
+                    <div class="tax-example-step ml-4">• XIII GREP: $400 × 7.25% = $29.00</div>
+                    <div class="tax-example-step ml-4">• <strong>Total SS: $137.75</strong></div>
+                    <div class="tax-example-step"><strong>SE Calculation:</strong> XIII is <strong>excluded from
+                            SE</strong>,
+                        so SE = $0
+                    </div>
+                    <div class="tax-example-step"><strong>ISR:</strong> Calculated normally based on cumulative YTD
+                        (same as
+                        regular paychecks)
+                    </div>
+                    <div class="tax-example-result">Key: XIII Month uses the 7.25% SS rate as stipulated by Panamanian
+                        labor
+                        law. This rate applies to all 3 annual XIII payments.
+                    </div>
                 </div>
 
                 <div class="tax-example">
@@ -1045,13 +1199,27 @@
         let chartGrepInstance = null;
         let editingId = null;
 
+        // === VERSION CONTROL ===
+        // Update this single constant to change the version across the entire page
+        const VERSION = 'v0.35';
+
         const SALARY_IDS = ['inpBase', 'inpQBP', 'inpOT', 'inpVac', 'inpXIII', 'inpExtra'];
         const TAX_IDS = ['actSS', 'actSE', 'actISR', 'actISRGREP'];
         // [UPDATED] Added SS_GREP (9.00%)
         const RULES = { SS: 0.0975, SS_GREP: 0.09, SE: 0.0125, ISR_SAL: [{ t: 0, r: 0 }, { t: 11000, r: 0.15 }, { t: 50000, r: 0.25 }], ISR_GREP: [{ t: 0, r: 0.10 }, { t: 25000, r: 0.15 }] };
         let lastDecSal = 0; let lastDecGrep = 0;
 
+        // Function to populate version across the page
+        function updateVersion() {
+            // Update page title
+            document.title = `Payroll Compass | ${VERSION}`;
+            // Update navbar badge
+            const versionBadge = document.querySelector('.text-xs.text-slate-500.bg-slate-800');
+            if (versionBadge) versionBadge.textContent = VERSION;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            updateVersion();
             document.getElementById('entryDate').valueAsDate = new Date();
             checkXIIIWindow();
         });
@@ -1290,14 +1458,14 @@
                             const theoryGrep = e.grep * RULES.SS_GREP;
                             const theoryTotal = theorySal + theoryGrep;
                             tooltip = `Salary: $${fmt(theorySal)} (9.75%) + GREP: $${fmt(theoryGrep)} (9.00%) = Total: $${fmt(theoryTotal)}`;
-                            decoration = "underline decoration-dashed decoration-slate-400 cursor-help";
+                            decoration = "ledger-tooltip underline decoration-dashed decoration-slate-400";
                             // Blended Rate Calculation
                             pctVal = pct(e.actSS, salGross + e.grep);
                         } else {
                             pctVal = pct(e.actSS, salGross);
                         }
 
-                        val = `<span class="cell-val ${decoration}" title="${tooltip}">${valStr}</span><span class="cell-pct">${pctVal}</span>`;
+                        val = `<span class="cell-val ${decoration}" data-tooltip="${tooltip}">${valStr}</span><span class="cell-pct">${pctVal}</span>`;
                         css += ' border-l-2 border-orange-100';
                     }
                     else if (c.id === 'se') { val = `<span class="cell-val">$${fmt(e.actSE)}</span><span class="cell-pct">${pct(e.actSE, e.base + e.ot + e.vac + e.extra)}</span>`; }
@@ -1315,12 +1483,12 @@
                         let ytdSSPctVal = "";
                         if (ytd.grepBase > 0) {
                             ytdSSTooltip = `YTD Salary: $${fmt(ytdTheorySal)} (9.75%) + YTD GREP: $${fmt(ytdTheoryGrep)} (9.00%) = Total: $${fmt(ytdTheoryTotal)}`;
-                            ytdSSDecoration = "underline decoration-dashed decoration-slate-400 cursor-help";
+                            ytdSSDecoration = "ledger-tooltip underline decoration-dashed decoration-slate-400";
                             ytdSSPctVal = pct(ytd.actSS, ytd.salBase + ytd.grepBase);
                         } else {
                             ytdSSPctVal = pct(ytd.actSS, ytd.salBase);
                         }
-                        val = `<span class="cell-val ${ytdSSDecoration}" title="${ytdSSTooltip}">$${fmt(ytd.actSS)}</span><span class="cell-pct">${ytdSSPctVal}</span>`;
+                        val = `<span class="cell-val ${ytdSSDecoration}" data-tooltip="${ytdSSTooltip}">$${fmt(ytd.actSS)}</span><span class="cell-pct">${ytdSSPctVal}</span>`;
                         css += ' border-l-2 border-slate-200';
                     }
                     else if (c.id === 'yse') { val = `<span class="cell-val">$${fmt(ytd.actSE)}</span><span class="cell-pct">${pct(ytd.actSE, ytd.seBase)}</span>`; }
