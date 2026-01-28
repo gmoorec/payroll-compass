@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.32</title>
+    <title>Payroll Compass | v0.33</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -56,7 +56,7 @@
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.32</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.33</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
                 <a href="https://github.com/gmoorec/payroll-compass" target="_blank" class="text-slate-400 hover:text-white transition" title="View Source Code on GitHub">
@@ -629,7 +629,8 @@
                         if (e.grep > 0) {
                             const theorySal = salGross * RULES.SS;
                             const theoryGrep = e.grep * RULES.SS_GREP;
-                            tooltip = `Salary: $${fmt(theorySal)} (9.75%) | GREP: $${fmt(theoryGrep)} (9.00%)`;
+                            const theoryTotal = theorySal + theoryGrep;
+                            tooltip = `Salary: $${fmt(theorySal)} (9.75%) + GREP: $${fmt(theoryGrep)} (9.00%) = Total: $${fmt(theoryTotal)}`;
                             decoration = "underline decoration-dashed decoration-slate-400 cursor-help";
                             // Blended Rate Calculation
                             pctVal = pct(e.actSS, salGross + e.grep);
@@ -646,7 +647,23 @@
                     else if(['ins','loan1','loan2','loan3','loan4','loan5'].includes(c.id)) { if(e[c.id]>0) val='$'+fmt(e[c.id]); css+=' text-red-800'; }
                     else if(c.id==='ygross') { val='$'+fmt(ytd.grossSal); css+=' font-bold text-slate-600 border-l-2 border-slate-200'; }
                     else if(c.id==='ygrep') { val='$'+fmt(ytd.grepTotal); css+=' text-slate-500'; }
-                    else if(c.id==='yss') { val = `<span class="cell-val">$${fmt(ytd.actSS)}</span><span class="cell-pct">${pct(ytd.actSS, ytd.salBase)}</span>`; css+=' border-l-2 border-slate-200'; }
+                    else if(c.id==='yss') { 
+                        const ytdTheorySal = ytd.salBase * RULES.SS;
+                        const ytdTheoryGrep = ytd.grepBase * RULES.SS_GREP;
+                        const ytdTheoryTotal = ytdTheorySal + ytdTheoryGrep;
+                        let ytdSSTooltip = "";
+                        let ytdSSDecoration = "";
+                        let ytdSSPctVal = "";
+                        if (ytd.grepBase > 0) {
+                            ytdSSTooltip = `YTD Salary: $${fmt(ytdTheorySal)} (9.75%) + YTD GREP: $${fmt(ytdTheoryGrep)} (9.00%) = Total: $${fmt(ytdTheoryTotal)}`;
+                            ytdSSDecoration = "underline decoration-dashed decoration-slate-400 cursor-help";
+                            ytdSSPctVal = pct(ytd.actSS, ytd.salBase + ytd.grepBase);
+                        } else {
+                            ytdSSPctVal = pct(ytd.actSS, ytd.salBase);
+                        }
+                        val = `<span class="cell-val ${ytdSSDecoration}" title="${ytdSSTooltip}">$${fmt(ytd.actSS)}</span><span class="cell-pct">${ytdSSPctVal}</span>`; 
+                        css+=' border-l-2 border-slate-200'; 
+                    }
                     else if(c.id==='yse') { val = `<span class="cell-val">$${fmt(ytd.actSE)}</span><span class="cell-pct">${pct(ytd.actSE, ytd.seBase)}</span>`; }
                     else if(c.id==='yisrS') { val = `<span class="cell-val">$${fmt(ytd.actISR)}</span><span class="cell-pct">${pct(ytd.actISR, ytd.salBase)}</span>`; }
                     else if(c.id==='yisrG') { val = `<span class="cell-val">$${fmt(ytd.actISRG)}</span><span class="cell-pct">${pct(ytd.actISRG, ytd.grepBase)}</span>`; }
