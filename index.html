@@ -1,76 +1,303 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payroll Compass | v0.33</title>
-    
+    <title>Payroll Compass | v0.34</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        body { background-color: #f8fafc; font-family: 'Segoe UI', system-ui, sans-serif; }
-        .hidden-row { display: none !important; }
-        
+        body {
+            background-color: #f8fafc;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .hidden-row {
+            display: none !important;
+        }
+
         /* Table Aesthetics */
-        .sticky-col { position: sticky; left: 0; z-index: 20; border-right: 2px solid #e2e8f0; }
-        .custom-scroll::-webkit-scrollbar { height: 14px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 7px; border: 3px solid #f1f5f9; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
-        th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
-        td { font-size: 13px; white-space: nowrap; vertical-align: top; }
-        
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 20;
+            border-right: 2px solid #e2e8f0;
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            height: 14px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 7px;
+            border: 3px solid #f1f5f9;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        th {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        td {
+            font-size: 13px;
+            white-space: nowrap;
+            vertical-align: top;
+        }
+
         /* Cell Internal Styling */
-        .cell-val { display: block; font-weight: 600; color: #334155; }
-        .cell-pct { display: block; font-size: 10px; color: #94a3b8; font-weight: 500; margin-top: -2px;}
+        .cell-val {
+            display: block;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .cell-pct {
+            display: block;
+            font-size: 10px;
+            color: #94a3b8;
+            font-weight: 500;
+            margin-top: -2px;
+        }
 
         /* Column Grouping Colors */
-        .head-inc { background-color: #eff6ff; color: #1e40af; border-bottom: 2px solid #bfdbfe; }
-        .head-grep { background-color: #f5f3ff; color: #5b21b6; border-bottom: 2px solid #ddd6fe; }
-        .head-home { background-color: #f0fdf4; color: #15803d; border-bottom: 2px solid #bbf7d0; }
-        .head-tax { background-color: #fff7ed; color: #9a3412; border-bottom: 2px solid #fed7aa; }
-        .head-ded { background-color: #fef2f2; color: #991b1b; border-bottom: 2px solid #fecaca; }
-        .head-ytd { background-color: #f1f5f9; color: #475569; border-bottom: 2px solid #cbd5e1; }
-        .head-fix { background-color: #ffffff; color: #334155; border-bottom: 2px solid #e2e8f0; }
+        .head-inc {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-bottom: 2px solid #bfdbfe;
+        }
+
+        .head-grep {
+            background-color: #f5f3ff;
+            color: #5b21b6;
+            border-bottom: 2px solid #ddd6fe;
+        }
+
+        .head-home {
+            background-color: #f0fdf4;
+            color: #15803d;
+            border-bottom: 2px solid #bbf7d0;
+        }
+
+        .head-tax {
+            background-color: #fff7ed;
+            color: #9a3412;
+            border-bottom: 2px solid #fed7aa;
+        }
+
+        .head-ded {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-bottom: 2px solid #fecaca;
+        }
+
+        .head-ytd {
+            background-color: #f1f5f9;
+            color: #475569;
+            border-bottom: 2px solid #cbd5e1;
+        }
+
+        .head-fix {
+            background-color: #ffffff;
+            color: #334155;
+            border-bottom: 2px solid #e2e8f0;
+        }
 
         /* Modal Styles */
-        .modal-bg { background-color: rgba(0, 0, 0, 0.5); }
-        
+        .modal-bg {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
         /* Edit Mode Highlight */
-        .editing-row { background-color: #fef9c3 !important; }
+        .editing-row {
+            background-color: #fef9c3 !important;
+        }
 
         /* Toggle Button Active State */
         .btn-active {
-            background-color: #eff6ff; /* bg-blue-50 */
-            color: #2563eb; /* text-blue-600 */
-            border-color: #93c5fd; /* border-blue-300 */
-            box-shadow: 0 0 0 2px #93c5fd; /* ring-2 ring-blue-300 */
+            background-color: #eff6ff;
+            /* bg-blue-50 */
+            color: #2563eb;
+            /* text-blue-600 */
+            border-color: #93c5fd;
+            /* border-blue-300 */
+            box-shadow: 0 0 0 2px #93c5fd;
+            /* ring-2 ring-blue-300 */
+        }
+
+        /* Tab Navigation Styles */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: #334155;
+            background: #f8fafc;
+        }
+
+        .tab-btn.active {
+            color: #0ea5e9;
+            border-bottom-color: #0ea5e9;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Info Icon Styles */
+        .info-icon {
+            cursor: help;
+            color: #94a3b8;
+            font-size: 11px;
+            margin-left: 3px;
+            display: inline-block;
+            transition: color 0.2s;
+        }
+
+        .info-icon:hover {
+            color: #3b82f6;
+        }
+
+        /* Tax Tables Styling */
+        .tax-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 13px;
+        }
+
+        .tax-table th {
+            background: #f1f5f9;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #cbd5e1;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .tax-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        .tax-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tax-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .tax-example {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 4px;
+        }
+
+        .tax-example-title {
+            font-weight: 700;
+            color: #0369a1;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .tax-example-step {
+            margin: 6px 0;
+            font-size: 13px;
+            color: #334155;
+        }
+
+        .tax-example-result {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #bae6fd;
+            font-weight: 600;
+            color: #0c4a6e;
         }
     </style>
 </head>
+
 <body class="text-slate-800 h-screen flex flex-col relative">
 
     <nav class="bg-slate-900 text-white shadow-lg shrink-0">
         <div class="max-w-[98%] mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <span class="font-bold text-lg tracking-tight text-emerald-400">Payroll Compass</span>
-                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.33</span>
+                <span class="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">v0.34</span>
             </div>
             <div class="flex space-x-4 text-xs font-medium items-center">
-                <a href="https://github.com/gmoorec/payroll-compass" target="_blank" class="text-slate-400 hover:text-white transition" title="View Source Code on GitHub">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" /></svg>
+                <a href="https://github.com/gmoorec/payroll-compass" target="_blank"
+                    class="text-slate-400 hover:text-white transition" title="View Source Code on GitHub">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill-rule="evenodd"
+                            d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                            clip-rule="evenodd" />
+                    </svg>
                 </a>
                 <div class="h-4 w-px bg-slate-700 mx-1"></div>
 
                 <input type="file" id="csvInput" class="hidden-row" accept=".csv" onchange="importCSV(this)">
-                <button onclick="document.getElementById('csvInput').click()" class="hover:text-emerald-300 transition">Import</button>
+                <button onclick="document.getElementById('csvInput').click()"
+                    class="hover:text-emerald-300 transition">Import</button>
                 <button onclick="exportCSV()" class="hover:text-emerald-300 transition">Export</button>
                 <button onclick="resetSession()" class="text-red-400 hover:text-red-300 transition">Reset</button>
                 <div class="h-4 w-px bg-slate-700 mx-2"></div>
-                <button onclick="toggleModal('aboutModal')" class="flex items-center text-slate-300 hover:text-white transition">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <button onclick="toggleModal('aboutModal')"
+                    class="flex items-center text-slate-300 hover:text-white transition">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                     About
                 </button>
             </div>
@@ -78,45 +305,77 @@
     </nav>
 
     <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
-        
+
         <div class="w-full lg:w-96 bg-white border-r border-slate-200 overflow-y-auto shrink-0 z-10 shadow-xl">
             <div class="p-5 space-y-5">
-                
+
                 <div class="flex justify-between items-center border-b pb-4">
                     <h2 class="font-bold text-slate-700" id="editorTitle">Editor</h2>
-                    <input type="date" id="entryDate" onchange="checkXIIIWindow()" class="bg-slate-50 border rounded px-2 py-1 text-xs font-medium text-slate-600 outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="date" id="entryDate" onchange="checkXIIIWindow()"
+                        class="bg-slate-50 border rounded px-2 py-1 text-xs font-medium text-slate-600 outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div class="space-y-3">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Earnings</span>
                         <div class="flex space-x-1">
-                            <button id="btnTog_rowQBP" onclick="toggleRow('rowQBP', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">QBP</button>
-                            <button id="btnTog_rowOT" onclick="toggleRow('rowOT', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">OT</button>
-                            <button id="btnTog_rowVac" onclick="toggleRow('rowVac', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">VAC</button>
-                            <button id="btnTog_rowXIII" onclick="toggleRow('rowXIII', this)" class="hidden-row tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-yellow-50 text-yellow-600 border-yellow-200">XIII</button>
-                            <button id="btnTog_rowGREP" onclick="toggleRow('rowGREP', this)" class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">GREP</button>
+                            <button id="btnTog_rowQBP" onclick="toggleRow('rowQBP', this)"
+                                class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">QBP</button>
+                            <button id="btnTog_rowOT" onclick="toggleRow('rowOT', this)"
+                                class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">OT</button>
+                            <button id="btnTog_rowVac" onclick="toggleRow('rowVac', this)"
+                                class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">VAC</button>
+                            <button id="btnTog_rowXIII" onclick="toggleRow('rowXIII', this)"
+                                class="hidden-row tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-yellow-50 text-yellow-600 border-yellow-200">XIII</button>
+                            <button id="btnTog_rowGREP" onclick="toggleRow('rowGREP', this)"
+                                class="tog-btn px-1.5 py-0.5 rounded border text-[10px] font-bold bg-white text-slate-400 hover:bg-slate-50">GREP</button>
                         </div>
                     </div>
 
                     <div class="space-y-2">
-                        <div class="flex justify-between items-center"><label class="text-xs font-medium text-slate-600">Base Salary</label><input type="number" id="inpBase" oninput="calcTotal()" class="w-24 text-right border rounded px-2 py-1 text-sm outline-none focus:border-blue-500" placeholder="0.00"></div>
-                        
-                        <div id="rowQBP" class="hidden-row flex justify-between items-center bg-blue-50 p-1 rounded"><label class="text-xs font-bold text-blue-700">QBP Bonus</label><input type="number" id="inpQBP" oninput="calcTotal()" class="w-24 text-right border border-blue-200 text-sm" placeholder="0.00"></div>
-                        <div id="rowOT" class="hidden-row flex justify-between items-center"><label class="text-xs font-medium">Overtime</label><input type="number" id="inpOT" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
-                        <div id="rowVac" class="hidden-row flex justify-between items-center"><label class="text-xs font-medium">Vacation</label><input type="number" id="inpVac" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
-                        <div id="rowXIII" class="hidden-row flex justify-between items-center bg-yellow-50 p-1 rounded"><label class="text-xs font-bold text-yellow-700">XIII Mes</label><input type="number" id="inpXIII" oninput="calcTotal()" class="w-24 text-right border border-yellow-200 text-sm" placeholder="0.00"></div>
-                        <div id="rowExtra" class="flex justify-between items-center"><label class="text-xs font-medium text-slate-400">Extra/Misc</label><input type="number" id="inpExtra" oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
-                        
+                        <div class="flex justify-between items-center"><label
+                                class="text-xs font-medium text-slate-600">Base Salary</label><input type="number"
+                                id="inpBase" oninput="calcTotal()"
+                                class="w-24 text-right border rounded px-2 py-1 text-sm outline-none focus:border-blue-500"
+                                placeholder="0.00"></div>
+
+                        <div id="rowQBP" class="hidden-row flex justify-between items-center bg-blue-50 p-1 rounded">
+                            <label class="text-xs font-bold text-blue-700">QBP Bonus</label><input type="number"
+                                id="inpQBP" oninput="calcTotal()" class="w-24 text-right border border-blue-200 text-sm"
+                                placeholder="0.00">
+                        </div>
+                        <div id="rowOT" class="hidden-row flex justify-between items-center"><label
+                                class="text-xs font-medium">Overtime</label><input type="number" id="inpOT"
+                                oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
+                        <div id="rowVac" class="hidden-row flex justify-between items-center"><label
+                                class="text-xs font-medium">Vacation</label><input type="number" id="inpVac"
+                                oninput="calcTotal()" class="w-24 text-right border text-sm" placeholder="0.00"></div>
+                        <div id="rowXIII" class="hidden-row flex justify-between items-center bg-yellow-50 p-1 rounded">
+                            <label class="text-xs font-bold text-yellow-700">XIII Mes</label><input type="number"
+                                id="inpXIII" oninput="calcTotal()"
+                                class="w-24 text-right border border-yellow-200 text-sm" placeholder="0.00">
+                        </div>
+                        <div id="rowExtra" class="flex justify-between items-center"><label
+                                class="text-xs font-medium text-slate-400">Extra/Misc</label><input type="number"
+                                id="inpExtra" oninput="calcTotal()" class="w-24 text-right border text-sm"
+                                placeholder="0.00"></div>
+
                         <div class="flex justify-between items-center pt-2 border-t mt-2 mb-2">
                             <span class="text-xs font-bold text-slate-500">GROSS SALARY</span>
                             <span id="dispSalTotal" class="font-bold text-lg text-blue-700">$0.00</span>
                         </div>
 
-                        <div id="rowGREP" class="hidden-row flex justify-between items-center border-t border-dashed pt-2"><label class="text-xs font-bold text-purple-700">GREP</label><input type="number" id="inpGREP" oninput="calcTotal()" class="w-24 text-right border bg-purple-50 text-sm" placeholder="0.00"></div>
-                        <div class="flex justify-between items-center pt-1"><label class="text-xs font-medium text-emerald-600">Home Stipend</label><input type="number" id="inpHome" value="50.00" oninput="calcTotal()" class="w-24 text-right border border-emerald-100 text-sm" placeholder="0.00"></div>
+                        <div id="rowGREP"
+                            class="hidden-row flex justify-between items-center border-t border-dashed pt-2"><label
+                                class="text-xs font-bold text-purple-700">GREP</label><input type="number" id="inpGREP"
+                                oninput="calcTotal()" class="w-24 text-right border bg-purple-50 text-sm"
+                                placeholder="0.00"></div>
+                        <div class="flex justify-between items-center pt-1"><label
+                                class="text-xs font-medium text-emerald-600">Home Stipend</label><input type="number"
+                                id="inpHome" value="50.00" oninput="calcTotal()"
+                                class="w-24 text-right border border-emerald-100 text-sm" placeholder="0.00"></div>
                     </div>
-                    
+
                     <div class="flex justify-between items-center pt-2 border-t mt-2">
                         <span class="text-xs font-bold text-slate-800">TOTAL EARNINGS</span>
                         <span id="dispTotalEarnings" class="font-bold text-lg text-slate-800">$0.00</span>
@@ -126,12 +385,25 @@
                 <div class="space-y-3 pt-2">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Taxes (Actual)</span>
                     <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block text-[10px] text-slate-500 mb-0.5">S.S.</label><input type="number" id="actSS" oninput="calcTotal()" class="w-full text-right border rounded px-2 py-1 text-xs"></div>
-                        <div><label class="block text-[10px] text-slate-500 mb-0.5">S.E.</label><input type="number" id="actSE" oninput="calcTotal()" class="w-full text-right border rounded px-2 py-1 text-xs"></div>
-                        <div><label class="block text-[10px] text-slate-500 mb-0.5">ISR Salary</label><input type="number" id="actISR" oninput="calcTotal()" class="w-full text-right border rounded px-2 py-1 text-xs"></div>
-                        <div id="taxRowGREP" class="hidden-row"><label class="block text-[10px] text-purple-600 mb-0.5">ISR GREP</label><input type="number" id="actISRGREP" oninput="calcTotal()" class="w-full text-right border rounded px-2 py-1 text-xs bg-purple-50"></div>
+                        <div><label class="block text-[10px] text-slate-500 mb-0.5">S.S. <span class="info-icon"
+                                    title="Social Security: 9.75% on Base Salary, 9.00% on GREP, 7.25% on XIII Month">ℹ️</span></label><input
+                                type="number" id="actSS" oninput="calcTotal()"
+                                class="w-full text-right border rounded px-2 py-1 text-xs"></div>
+                        <div><label class="block text-[10px] text-slate-500 mb-0.5">S.E. <span class="info-icon"
+                                    title="Educational Tax: 1.25% on Base + Overtime + Vacation + Extra (excludes GREP, Home, Bonuses)">ℹ️</span></label><input
+                                type="number" id="actSE" oninput="calcTotal()"
+                                class="w-full text-right border rounded px-2 py-1 text-xs"></div>
+                        <div><label class="block text-[10px] text-slate-500 mb-0.5">ISR Salary <span class="info-icon"
+                                    title="Progressive tax on cumulative yearly salary. Brackets: $0-11k (0%), $11k-50k (15%), $50k+ (25%). Click Tax Rules tab for details.">ℹ️</span></label><input
+                                type="number" id="actISR" oninput="calcTotal()"
+                                class="w-full text-right border rounded px-2 py-1 text-xs"></div>
+                        <div id="taxRowGREP" class="hidden-row"><label
+                                class="block text-[10px] text-purple-600 mb-0.5">ISR GREP <span class="info-icon"
+                                    title="Progressive tax on cumulative yearly GREP. Brackets: $0-25k (10%), $25k+ (15%). Click Tax Rules tab for details.">ℹ️</span></label><input
+                                type="number" id="actISRGREP" oninput="calcTotal()"
+                                class="w-full text-right border rounded px-2 py-1 text-xs bg-purple-50"></div>
                     </div>
-                    
+
                     <div class="flex justify-between items-center pt-2 border-t mt-2">
                         <span class="text-xs font-bold text-slate-500">TOTAL TAXES</span>
                         <span id="dispTotalTaxes" class="font-bold text-base text-red-600">$0.00</span>
@@ -140,63 +412,110 @@
 
                 <div class="space-y-2 pt-2">
                     <div class="flex justify-between items-center">
-                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deductions</span>
-                         <div class="flex space-x-1">
-                             <button onclick="toggleRow('rowLoan1', this)" id="btnTog_rowLoan1" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L1</button>
-                             <button onclick="toggleRow('rowLoan2', this)" id="btnTog_rowLoan2" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L2</button>
-                             <button onclick="toggleRow('rowLoan3', this)" id="btnTog_rowLoan3" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L3</button>
-                             <button onclick="toggleRow('rowLoan4', this)" id="btnTog_rowLoan4" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L4</button>
-                             <button onclick="toggleRow('rowLoan5', this)" id="btnTog_rowLoan5" class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L5</button>
-                         </div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deductions</span>
+                        <div class="flex space-x-1">
+                            <button onclick="toggleRow('rowLoan1', this)" id="btnTog_rowLoan1"
+                                class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L1</button>
+                            <button onclick="toggleRow('rowLoan2', this)" id="btnTog_rowLoan2"
+                                class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L2</button>
+                            <button onclick="toggleRow('rowLoan3', this)" id="btnTog_rowLoan3"
+                                class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L3</button>
+                            <button onclick="toggleRow('rowLoan4', this)" id="btnTog_rowLoan4"
+                                class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L4</button>
+                            <button onclick="toggleRow('rowLoan5', this)" id="btnTog_rowLoan5"
+                                class="text-[9px] px-1.5 py-0.5 border rounded bg-white text-slate-400 hover:bg-slate-50">L5</button>
+                        </div>
                     </div>
-                    
+
                     <div class="space-y-1">
-                        <div class="flex justify-between items-center"><label class="text-xs text-slate-600">Insurance</label><input type="number" id="inpIns" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
-                        
-                        <div id="rowLoan1" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 1</label><input type="number" id="inpLoan1" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
-                        <div id="rowLoan2" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 2</label><input type="number" id="inpLoan2" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
-                        <div id="rowLoan3" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 3</label><input type="number" id="inpLoan3" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
-                        <div id="rowLoan4" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 4</label><input type="number" id="inpLoan4" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
-                        <div id="rowLoan5" class="hidden-row flex justify-between items-center"><label class="text-xs text-slate-600">Loan 5</label><input type="number" id="inpLoan5" class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        <div class="flex justify-between items-center"><label
+                                class="text-xs text-slate-600">Insurance</label><input type="number" id="inpIns"
+                                class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+
+                        <div id="rowLoan1" class="hidden-row flex justify-between items-center"><label
+                                class="text-xs text-slate-600">Loan 1</label><input type="number" id="inpLoan1"
+                                class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        <div id="rowLoan2" class="hidden-row flex justify-between items-center"><label
+                                class="text-xs text-slate-600">Loan 2</label><input type="number" id="inpLoan2"
+                                class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        <div id="rowLoan3" class="hidden-row flex justify-between items-center"><label
+                                class="text-xs text-slate-600">Loan 3</label><input type="number" id="inpLoan3"
+                                class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        <div id="rowLoan4" class="hidden-row flex justify-between items-center"><label
+                                class="text-xs text-slate-600">Loan 4</label><input type="number" id="inpLoan4"
+                                class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
+                        <div id="rowLoan5" class="hidden-row flex justify-between items-center"><label
+                                class="text-xs text-slate-600">Loan 5</label><input type="number" id="inpLoan5"
+                                class="w-20 text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"></div>
                     </div>
                 </div>
 
                 <div class="mt-4 flex space-x-2">
-                    <button id="btnCommit" onclick="commit()" class="flex-1 bg-slate-800 text-white font-bold py-3 rounded shadow hover:bg-slate-900 transition mt-4">Add Pay Stub</button>
-                    <button id="btnCancel" onclick="cancelEdit()" class="hidden-row flex-none bg-red-100 text-red-600 font-bold py-3 px-4 rounded shadow hover:bg-red-200 transition mt-4">Cancel</button>
+                    <button id="btnCommit" onclick="commit()"
+                        class="flex-1 bg-slate-800 text-white font-bold py-3 rounded shadow hover:bg-slate-900 transition mt-4">Add
+                        Pay Stub</button>
+                    <button id="btnCancel" onclick="cancelEdit()"
+                        class="hidden-row flex-none bg-red-100 text-red-600 font-bold py-3 px-4 rounded shadow hover:bg-red-200 transition mt-4">Cancel</button>
                 </div>
             </div>
         </div>
 
         <div class="flex-1 overflow-hidden flex flex-col bg-slate-50">
-            
+
             <div class="grid grid-cols-5 gap-4 p-6 shrink-0">
-                
+
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Cash Flow</div>
                     <table class="w-full text-xs">
-                        <tr><td class="py-0.5 text-slate-500">Salary</td><td class="py-0.5 text-right font-medium text-blue-700" id="kpiCFSal">$0.00</td></tr>
-                        <tr><td class="py-0.5 text-slate-500">GREP</td><td class="py-0.5 text-right font-medium text-purple-700" id="kpiCFGrep">$0.00</td></tr>
-                        <tr class="border-b border-dashed border-slate-100"><td class="py-0.5 text-slate-500">Home</td><td class="py-0.5 text-right font-medium text-emerald-600" id="kpiCFHome">$0.00</td></tr>
-                        <tr><td class="py-0.5 text-slate-800 font-bold">Total Gross</td><td class="py-0.5 text-right font-bold text-slate-800" id="kpiCFTotal">$0.00</td></tr>
-                        
-                        <tr><td class="py-0.5 text-red-500">Total Tax</td><td class="py-0.5 text-right font-medium text-red-500" id="kpiCFTax">-$0.00</td></tr>
-                        <tr class="border-b border-slate-200"><td class="py-0.5 text-orange-500">Other Ded.</td><td class="py-0.5 text-right font-medium text-orange-500" id="kpiCFDed">-$0.00</td></tr>
-                        <tr><td class="pt-1 font-bold text-slate-800 text-sm">NET PAY</td><td class="pt-1 text-right font-bold text-emerald-600 text-base" id="kpiCFNet">$0.00</td></tr>
+                        <tr>
+                            <td class="py-0.5 text-slate-500">Salary</td>
+                            <td class="py-0.5 text-right font-medium text-blue-700" id="kpiCFSal">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td class="py-0.5 text-slate-500">GREP</td>
+                            <td class="py-0.5 text-right font-medium text-purple-700" id="kpiCFGrep">$0.00</td>
+                        </tr>
+                        <tr class="border-b border-dashed border-slate-100">
+                            <td class="py-0.5 text-slate-500">Home</td>
+                            <td class="py-0.5 text-right font-medium text-emerald-600" id="kpiCFHome">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td class="py-0.5 text-slate-800 font-bold">Total Gross</td>
+                            <td class="py-0.5 text-right font-bold text-slate-800" id="kpiCFTotal">$0.00</td>
+                        </tr>
+
+                        <tr>
+                            <td class="py-0.5 text-red-500">Total Tax</td>
+                            <td class="py-0.5 text-right font-medium text-red-500" id="kpiCFTax">-$0.00</td>
+                        </tr>
+                        <tr class="border-b border-slate-200">
+                            <td class="py-0.5 text-orange-500">Other Ded.</td>
+                            <td class="py-0.5 text-right font-medium text-orange-500" id="kpiCFDed">-$0.00</td>
+                        </tr>
+                        <tr>
+                            <td class="pt-1 font-bold text-slate-800 text-sm">NET PAY</td>
+                            <td class="pt-1 text-right font-bold text-emerald-600 text-base" id="kpiCFNet">$0.00</td>
+                        </tr>
                     </table>
                 </div>
 
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col relative" id="kpiXIII">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1 flex justify-between">
                         <span>XIII Estimator</span>
-                        <button onclick="toggleDecInput()" class="text-blue-500 hover:text-blue-700" title="Set Previous Year Carryover">⚙️</button>
+                        <button onclick="toggleDecInput()" class="text-blue-500 hover:text-blue-700"
+                            title="Set Previous Year Carryover">⚙️</button>
                     </div>
-                    
-                    <div id="xiiiConfig" class="hidden-row absolute top-8 left-2 right-2 bg-white border border-slate-200 shadow-md p-2 rounded z-10">
+
+                    <div id="xiiiConfig"
+                        class="hidden-row absolute top-8 left-2 right-2 bg-white border border-slate-200 shadow-md p-2 rounded z-10">
                         <label class="text-[10px] text-slate-500 block mb-1">Last Dec Gross (Salary Only)</label>
-                        <input type="number" id="inpLastDecSal" class="w-full text-right border rounded px-1 py-0.5 text-xs mb-2" placeholder="0.00" onchange="refresh()">
+                        <input type="number" id="inpLastDecSal"
+                            class="w-full text-right border rounded px-1 py-0.5 text-xs mb-2" placeholder="0.00"
+                            onchange="refresh()">
                         <label class="text-[10px] text-slate-500 block mb-1">Last Dec GREP</label>
-                        <input type="number" id="inpLastDecGrep" class="w-full text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00" onchange="refresh()">
+                        <input type="number" id="inpLastDecGrep"
+                            class="w-full text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"
+                            onchange="refresh()">
                     </div>
 
                     <div class="flex-1 flex flex-col justify-center space-y-2">
@@ -208,30 +527,33 @@
                             <span class="text-[9px] text-slate-500 uppercase">GREP Est.</span>
                             <span class="text-sm font-bold text-purple-600" id="kpiXIIIGrepVal">$0.00</span>
                         </div>
-                        <div class="text-[9px] text-slate-400 italic text-right mt-1" id="kpiXIIIStatus">Calculating...</div>
+                        <div class="text-[9px] text-slate-400 italic text-right mt-1" id="kpiXIIIStatus">Calculating...
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col transition-opacity duration-300" id="cardDed">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Other Deductions</div>
+                <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col transition-opacity duration-300"
+                    id="cardDed">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD Other Deductions
+                    </div>
                     <table class="w-full text-xs mt-1" id="kpiDedTable">
-                        </table>
+                    </table>
                 </div>
 
                 <div class="bg-white p-3 rounded shadow-sm border border-slate-200 flex flex-col">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD ISR SALARY</div>
                     <div class="flex flex-1 items-center">
                         <div class="w-1/2 pr-2 space-y-2">
-                             <div>
+                            <div>
                                 <div class="text-[9px] text-red-500 font-bold uppercase">Paid</div>
                                 <div id="kpiSalPaidVal" class="text-xs font-bold">$0.00</div>
                                 <div id="kpiSalPaidRate" class="text-[9px] text-slate-400">0.00%</div>
-                             </div>
-                             <div>
+                            </div>
+                            <div>
                                 <div class="text-[9px] text-emerald-500 font-bold uppercase">Legal</div>
                                 <div id="kpiSalLegVal" class="text-xs font-bold">$0.00</div>
                                 <div id="kpiSalLegRate" class="text-[9px] text-slate-400">0.00%</div>
-                             </div>
+                            </div>
                         </div>
                         <div class="w-1/2 h-full relative" style="min-height: 80px;">
                             <canvas id="chartSal"></canvas>
@@ -239,20 +561,21 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-3 rounded shadow-sm border border-slate-200 opacity-50 transition-opacity flex flex-col" id="cardGrep">
+                <div class="bg-white p-3 rounded shadow-sm border border-slate-200 opacity-50 transition-opacity flex flex-col"
+                    id="cardGrep">
                     <div class="text-[10px] font-bold text-slate-400 uppercase border-b pb-1 mb-1">YTD ISR GREP</div>
                     <div class="flex flex-1 items-center">
                         <div class="w-1/2 pr-2 space-y-2">
-                             <div>
+                            <div>
                                 <div class="text-[9px] text-red-500 font-bold uppercase">Paid</div>
                                 <div id="kpiGrepPaidVal" class="text-xs font-bold">$0.00</div>
                                 <div id="kpiGrepPaidRate" class="text-[9px] text-slate-400">0.00%</div>
-                             </div>
-                             <div>
+                            </div>
+                            <div>
                                 <div class="text-[9px] text-emerald-500 font-bold uppercase">Legal</div>
                                 <div id="kpiGrepLegVal" class="text-xs font-bold">$0.00</div>
                                 <div id="kpiGrepLegRate" class="text-[9px] text-slate-400">0.00%</div>
-                             </div>
+                            </div>
                         </div>
                         <div class="w-1/2 h-full relative" style="min-height: 80px;">
                             <canvas id="chartGrep"></canvas>
@@ -267,13 +590,13 @@
                     <div class="p-3 bg-white border-b flex justify-between items-center shrink-0">
                         <h3 class="font-bold text-xs text-slate-700 uppercase">Granular Ledger</h3>
                     </div>
-                    
+
                     <div class="flex-1 overflow-auto custom-scroll relative">
                         <table class="w-full text-left border-collapse" id="mainTable">
                             <thead class="sticky top-0 z-20 shadow-sm">
-                                </thead>
+                            </thead>
                             <tbody class="divide-y divide-slate-100 bg-white">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -282,111 +605,429 @@
     </div>
 
     <div id="aboutModal" class="hidden-row fixed inset-0 z-50 flex items-center justify-center modal-bg px-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
-            <button onclick="toggleModal('aboutModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+            <button onclick="toggleModal('aboutModal')"
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
-            <div class="prose prose-sm max-w-none text-slate-700">
-                <h1 class="text-2xl font-bold mb-1 text-slate-800">🧭 Payroll Compass</h1>
-                <h4 class="text-sm font-medium text-slate-500 mb-6">A private, client-side tool for validating Panamanian payroll deductions.</h4>
-                
-                <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">😵‍💫</span> The Problem</h2>
-                <p class="mb-4">Payroll transparency can be a challenge. Employees often struggle to understand why their tax deductions fluctuate throughout the year, especially when variable income (Bonuses, Overtime, XIII Month) is involved.</p>
-                <p class="mb-4">Standard pay stubs provide a snapshot of a single moment, but they rarely explain the context of how progressive taxes (like ISR) are calculated on a cumulative basis. This leads to confusion, "sticker shock" during bonus months, and unnecessary friction between staff and management.</p>
-                
-                <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🎯</span> The Solution</h2>
-                <p class="mb-4">Payroll Compass is a web-based calculator designed to bridge the gap between "What Payroll Deducted" and "What the Law Says."</p>
-                <p class="mb-2">It allows you to:</p>
-                <ul class="list-disc pl-5 mb-4 space-y-1">
-                    <li><strong>Digitize your Pay Stubs:</strong> Input your data period-by-period.</li>
-                    <li><strong>Validate Deductions:</strong> Instantly compare the taxes deducted against the official Panama tax tables.</li>
-                    <li><strong>Visualize the "Why":</strong> See cumulative graphs that explain how your effective tax rate changes over time.</li>
-                    <li><strong>Forecast:</strong> Understand how a future bonus might impact your net pay.</li>
-                </ul>
 
-                <h2 class="text-lg font-bold mt-6 mb-2 flex items-center text-emerald-600"><span class="mr-2">🔒</span> Privacy & Data Security</h2>
-                <p class="mb-2 font-bold">🚨 This is the most important section. Please read carefully.</p>
-                <p class="mb-2">This tool follows a <strong>"Zero-Knowledge"</strong> architecture.</p>
-                <ul class="list-disc pl-5 mb-4 space-y-1">
-                    <li><strong>Client-Side Only:</strong> All calculations happen 100% inside your web browser (Chrome, Edge, Safari).</li>
-                    <li><strong>No Database:</strong> There is no backend server. We do not store your salary, your name, or your financial data.</li>
-                    <li><strong>No Transmission:</strong> When you click "Add Pay Stub," data moves from your keyboard to your browser's temporary memory (RAM). It is NEVER sent over the internet.
-                        <ul class="list-none pl-4 mt-1 text-slate-500 italic"><li>- The same is true when you "Import" your CSV backup file.</li></ul>
-                    </li>
-                    <li><strong>Session-Based:</strong> If you refresh the page, your data is gone forever—unless you explicitly choose to export a backup.</li>
-                </ul>
-                <h3 class="text-md font-bold mt-4 mb-2">How to Verify</h3>
-                <p class="mb-4">You can disconnect your internet after loading the page. The tool will continue to function perfectly, proving that it does not need to "phone home" to work.</p>
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('about')">About</button>
+                <button class="tab-btn" onclick="switchTab('taxrules')">Tax Rules</button>
+                <button class="tab-btn" onclick="switchTab('examples')">Examples</button>
+                <button class="tab-btn" onclick="switchTab('faq')">FAQ</button>
+            </div>
 
-                <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🧑‍🏫</span> How to Use</h2>
-                <h4 class="text-md font-bold mt-2 mb-2">A. The Editor (Left Panel)</h4>
-                <ul class="list-disc pl-5 mb-4 space-y-1">
-                    <li><strong>Date:</strong> Select the date of your pay stub.
-                        <div class="mt-1 p-2 bg-amber-50 border-l-2 border-amber-400 text-xs text-amber-700">
-                            <strong>Important:</strong> Start your ledger with <strong>JANUARY</strong> of the current year. Do not enter pay stubs from the previous year as rows.<br>
-                            To configure the XIII Month carryover, use the <strong>XIII Estimator configuration (⚙️)</strong> and enter the values from your <strong>LAST</strong> pay stub of December (Dec 16-31), not the total for the month.
-                        </div>
-                    </li>
-                    <li><strong>Income:</strong> Enter your Base Salary.
-                        <ul class="list-none pl-4 mt-1 text-slate-500 italic">
-                            <li>- Use the toggle buttons <strong>[QBP], [OT], [VAC]</strong> to reveal inputs for variable income.</li>
-                            <li>- <strong>[XIII]:</strong> This toggle only appears if the selected date is within a valid payment window (Apr 1-15, Aug 1-15, Dec 1-15).</li>
-                            <li>- <strong>Totals:</strong> The editor updates "GROSS SALARY" (Taxable Base) and "TOTAL EARNINGS" (Base + GREP + Home) in real-time.</li>
-                        </ul>
-                    </li>
-                    <li><strong>Taxes:</strong> Enter the actual tax amounts shown on your physical pay stub (SS, SE, ISR).</li>
-                    <li><strong>Deductions:</strong> 
-                        <ul class="list-none pl-4 mt-1 text-slate-500 italic">
-                            <li>- <strong>Insurance:</strong> Use this entry to document additional Insurance deductions.</li>
-                            <li>- <strong>Loans:</strong> Use the toggle buttons (L1 - L5) to manage up to 5 distinct loan slots.</li>
-                        </ul>
-                    </li>
-                    <li><strong>Actions:</strong>
-                        <ul class="list-none pl-4 mt-1 text-slate-500 italic">
-                             <li>- <strong>Add Pay Stub:</strong> Commits the data to the ledger.</li>
-                             <li>- <strong>Edit:</strong> Click the ✏️ pencil icon on a row to safely modify it.</li>
-                        </ul>
-                    </li>
-                </ul>
+            <!-- About Tab (Existing Content) -->
+            <div id="tab-about" class="tab-content active">
+                <div class="prose prose-sm max-w-none text-slate-700">
+                    <h1 class="text-2xl font-bold mb-1 text-slate-800">🧭 Payroll Compass</h1>
+                    <h4 class="text-sm font-medium text-slate-500 mb-6">A private, client-side tool for validating
+                        Panamanian payroll deductions.</h4>
 
-                <h4 class="text-md font-bold mt-4 mb-2">B. Interpreting the Data (Right Panel)</h4>
-                <p class="mb-2 font-semibold">The Dashboard (KPIs)</p>
-                <ul class="list-disc pl-5 mb-4 space-y-1">
-                    <li><strong>YTD Cash Flow:</strong> A waterfall view showing your Total Income minus Taxes and Deductions, resulting in your Net Pay.</li>
-                    <li><strong>XIII Estimator:</strong> A smart projection of your next 13th Month payment. Use the gear icon ⚙️ to set carryover income from Dec 16-31 of the previous year for accurate April projections.</li>
-                    <li><strong>YTD Deductions:</strong> Breakdown of Insurance and individual Loans.</li>
-                    <li><strong>ISR Cards:</strong>
-                        <ul class="list-disc pl-5 mt-1">
-                            <li><strong>Paid:</strong> What the company took out.</li>
-                            <li><strong>Legal:</strong> What the strict annual tax table says you owe.</li>
-                            <li><strong>The Graph:</strong> If the <strong>Red Line</strong> (Paid) is above the <strong>Green Line</strong> (Legal), you are currently "ahead" on taxes and might see lower deductions later in the year.</li>
-                        </ul>
-                    </li>
-                </ul>
-                <p class="mb-2 font-semibold">The Ledger (Table)</p>
-                <ul class="list-disc pl-5 mb-4 space-y-1">
-                    <li><strong>Granularity:</strong> Every income type (OT, Vac, etc.) gets its own column if used.</li>
-                    <li><strong>Effective Rates:</strong> Below every tax dollar amount, you will see the Effective %. This helps identify exactly which rate was applied to that specific check.</li>
-                    <li><strong>YTD Section:</strong> The right side of the table shows running totals for the year.</li>
-                </ul>
+                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">😵‍💫</span> The
+                        Problem</h2>
+                    <p class="mb-4">Payroll transparency can be a challenge. Employees often struggle to understand why
+                        their tax deductions fluctuate throughout the year, especially when variable income (Bonuses,
+                        Overtime, XIII Month) is involved.</p>
+                    <p class="mb-4">Standard pay stubs provide a snapshot of a single moment, but they rarely explain
+                        the context of how progressive taxes (like ISR) are calculated on a cumulative basis. This leads
+                        to confusion, "sticker shock" during bonus months, and unnecessary friction between staff and
+                        management.</p>
 
-                <h4 class="text-md font-bold mt-4 mb-2">C. Saving Your Data</h4>
-                <p class="mb-2">Since we don't store your data, you must manage it yourself:</p>
-                <ul class="list-disc pl-5 mb-4 space-y-1">
-                    <li>At the top right corner, click the <strong>[Export]</strong> button to save a file to your computer.</li>
-                    <li>Next time you visit, click the <strong>[Import]</strong> button and select that file to pick up where you left off.</li>
-                </ul>
+                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🎯</span> The Solution
+                    </h2>
+                    <p class="mb-4">Payroll Compass is a web-based calculator designed to bridge the gap between "What
+                        Payroll Deducted" and "What the Law Says."</p>
+                    <p class="mb-2">It allows you to:</p>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li><strong>Digitize your Pay Stubs:</strong> Input your data period-by-period.</li>
+                        <li><strong>Validate Deductions:</strong> Instantly compare the taxes deducted against the
+                            official Panama tax tables.</li>
+                        <li><strong>Visualize the "Why":</strong> See cumulative graphs that explain how your effective
+                            tax rate changes over time.</li>
+                        <li><strong>Forecast:</strong> Understand how a future bonus might impact your net pay.</li>
+                    </ul>
 
-                <h2 class="text-lg font-bold mt-6 mb-2">Disclaimer</h2>
-                <div class="p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
-                    This tool is for educational and validation purposes only. It is built based on the Panamanian Tax Code (Código Fiscal). While it strives for 100% accuracy, official payroll calculations may vary due to specific internal accounting practices. Always consult with HR for official disputes.
+                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center text-emerald-600"><span
+                            class="mr-2">🔒</span> Privacy & Data Security</h2>
+                    <p class="mb-2 font-bold">🚨 This is the most important section. Please read carefully.</p>
+                    <p class="mb-2">This tool follows a <strong>"Zero-Knowledge"</strong> architecture.</p>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li><strong>Client-Side Only:</strong> All calculations happen 100% inside your web browser
+                            (Chrome, Edge, Safari).</li>
+                        <li><strong>No Database:</strong> There is no backend server. We do not store your salary, your
+                            name, or your financial data.</li>
+                        <li><strong>No Transmission:</strong> When you click "Add Pay Stub," data moves from your
+                            keyboard to your browser's temporary memory (RAM). It is NEVER sent over the internet.
+                            <ul class="list-none pl4 mt-1 text-slate-500 italic">
+                                <li>- The same is true when you "Import" your CSV backup file.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Session-Based:</strong> If you refresh the page, your data is gone forever—unless
+                            you explicitly choose to export a backup.</li>
+                    </ul>
+                    <h3 class="text-md font-bold mt-4 mb-2">How to Verify</h3>
+                    <p class="mb-4">You can disconnect your internet after loading the page. The tool will continue to
+                        function perfectly, proving that it does not need to "phone home" to work.</p>
+
+                    <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🧑‍🏫</span> How to Use
+                    </h2>
+                    <p class="mb-2 text-sm bg-blue-50 border-l-4 border-blue-400 p-3 rounded">💡 <strong>Tip:</strong>
+                        Hover over the info icons (ℹ️) next to tax fields for quick reference on rates and calculation
+                        rules.</p>
+
+                    <h4 class="text-md font-bold mt-2 mb-2">A. The Editor (Left Panel)</h4>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li><strong>Date:</strong> Select the date of your pay stub.
+                            <div class="mt-1 p-2 bg-amber-50 border-l-2 border-amber-400 text-xs text-amber-700">
+                                <strong>Important:</strong> Start your ledger with <strong>JANUARY</strong> of the
+                                current year. Do not enter pay stubs from the previous year as rows.<br>
+                                To configure the XIII Month carryover, use the <strong>XIII Estimator configuration
+                                    (⚙️)</strong> and enter the values from your <strong>LAST</strong> pay stub of
+                                December (Dec 16-31), not the total for the month.
+                            </div>
+                        </li>
+                        <li><strong>Income:</strong> Enter your Base Salary.
+                            <ul class="list-none pl-4 mt-1 text-slate-500 italic">
+                                <li>- Use the toggle buttons <strong>[QBP], [OT], [VAC]</strong> to reveal inputs for
+                                    variable income.</li>
+                                <li>- <strong>[XIII]:</strong> This toggle only appears if the selected date is within a
+                                    valid payment window (Apr 1-15, Aug 1-15, Dec 1-15).</li>
+                                <li>- <strong>Totals:</strong> The editor updates "GROSS SALARY" (Taxable Base) and
+                                    "TOTAL EARNINGS" (Base + GREP + Home) in real-time.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Taxes:</strong> Enter the actual tax amounts shown on your physical pay stub (SS,
+                            SE, ISR).</li>
+                        <li><strong>Deductions:</strong>
+                            <ul class="list-none pl-4 mt-1 text-slate-500 italic">
+                                <li>- <strong>Insurance:</strong> Use this entry to document additional Insurance
+                                    deductions.</li>
+                                <li>- <strong>Loans:</strong> Use the toggle buttons (L1 - L5) to manage up to 5
+                                    distinct loan slots.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Actions:</strong>
+                            <ul class="list-none pl-4 mt-1 text-slate-500 italic">
+                                <li>- <strong>Add Pay Stub:</strong> Commits the data to the ledger.</li>
+                                <li>- <strong>Edit:</strong> Click the ✏️ pencil icon on a row to safely modify it.</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <h4 class="text-md font-bold mt-4 mb-2">B. Interpreting the Data (Right Panel)</h4>
+                    <p class="mb-2 font-semibold">The Dashboard (KPIs)</p>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li><strong>YTD Cash Flow:</strong> A waterfall view showing your Total Income minus Taxes and
+                            Deductions, resulting in your Net Pay.</li>
+                        <li><strong>XIII Estimator:</strong> A smart projection of your next 13th Month payment. Use the
+                            gear icon ⚙️ to set carryover income from Dec 16-31 of the previous year for accurate April
+                            projections.</li>
+                        <li><strong>YTD Deductions:</strong> Breakdown of Insurance and individual Loans.</li>
+                        <li><strong>ISR Cards:</strong>
+                            <ul class="list-disc pl-5 mt-1">
+                                <li><strong>Paid:</strong> What the company took out.</li>
+                                <li><strong>Legal:</strong> What the strict annual tax table says you owe.</li>
+                                <li><strong>The Graph:</strong> If the <strong>Red Line</strong> (Paid) is above the
+                                    <strong>Green Line</strong> (Legal), you are currently "ahead" on taxes and might
+                                    see lower deductions later in the year.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <p class="mb-2 font-semibold">The Ledger (Table)</p>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li><strong>Granularity:</strong> Every income type (OT, Vac, etc.) gets its own column if used.
+                        </li>
+                        <li><strong>Effective Rates:</strong> Below every tax dollar amount, you will see the Effective
+                            %. This helps identify exactly which rate was applied to that specific check.</li>
+                        <li><strong>YTD Section:</strong> The right side of the table shows running totals for the year.
+                        </li>
+                    </ul>
+
+                    <h4 class="text-md font-bold mt-4 mb-2">C. Saving Your Data</h4>
+                    <p class="mb-2">Since we don't store your data, you must manage it yourself:</p>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li>At the top right corner, click the <strong>[Export]</strong> button to save a file to your
+                            computer.</li>
+                        <li>Next time you visit, click the <strong>[Import]</strong> button and select that file to pick
+                            up where you left off.</li>
+                    </ul>
+
+                    <h2 class="text-lg font-bold mt-6 mb-2">Disclaimer</h2>
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
+                        This tool is for educational and validation purposes only. It is built based on the Panamanian
+                        Tax Code (Código Fiscal). While it strives for 100% accuracy, official payroll calculations may
+                        vary due to specific internal accounting practices. Always consult with HR for official
+                        disputes.
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <a href="https://github.com/gmoorec/payroll-compass" target="_blank"
+                            class="text-xs text-slate-400 hover:text-slate-600 flex items-center justify-center">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2. 91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            View Source Code on GitHub
+                        </a>
+                    </div>
                 </div>
-                
-                <div class="mt-4 text-center">
-                    <a href="https://github.com/gmoorec/payroll-compass" target="_blank" class="text-xs text-slate-400 hover:text-slate-600 flex items-center justify-center">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" /></svg>
-                        View Source Code on GitHub
-                    </a>
+            </div>
+
+            <!-- Tax Rules Tab (NEW) -->
+            <div id="tab-taxrules" class="tab-content">
+                <h2 class="text-xl font-bold mb-4 text-slate-800">📊 Tax Rules & Rates</h2>
+                <p class="text-sm text-slate-600 mb-4">All rates and brackets are based on the Panamanian Tax Code
+                    (Código Fiscal).</p>
+
+                <h3 class="text-lg font-semibold mt-6 mb-3 text-slate-700">Social Security (SS)</h3>
+                <table class="tax-table">
+                    <thead>
+                        <tr>
+                            <th>Income Type</th>
+                            <th>Rate</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Base Salary</td>
+                            <td class="font-bold text-blue-700">9.75%</td>
+                            <td>Applied to regular salary + overtime + vacation + extra</td>
+                        </tr>
+                        <tr>
+                            <td>GREP (Representation)</td>
+                            <td class="font-bold text-purple-700">9.00%</td>
+                            <td>Lower rate for representation allowance</td>
+                        </tr>
+                        <tr>
+                            <td>XIII Month (13th Month)</td>
+                            <td class="font-bold text-yellow-700">7.25%</td>
+                            <td>Special reduced rate for year-end bonus</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="text-lg font-semibold mt-6 mb-3 text-slate-700">Educational Tax (SE)</h3>
+                <table class="tax-table">
+                    <thead>
+                        <tr>
+                            <th>Calculation Base</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Base Salary + Overtime + Vacation + Extra</td>
+                            <td class="font-bold text-orange-700">1.25%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="text-xs text-slate-500 mt-2"><strong>Note:</strong> SE excludes GREP, Home Stipend, and QBP
+                    Bonuses</p>
+
+                <h3 class="text-lg font-semibold mt-6 mb-3 text-slate-700">ISR Salary (Income Tax - Progressive)</h3>
+                <table class="tax-table">
+                    <thead>
+                        <tr>
+                            <th>Annual Income Range (YTD)</th>
+                            <th>Tax Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>$0 - $11,000</td>
+                            <td class="font-bold text-emerald-600">0%</td>
+                        </tr>
+                        <tr>
+                            <td>$11,000 - $50,000</td>
+                            <td class="font-bold text-amber-600">15%</td>
+                        </tr>
+                        <tr>
+                            <td>$50,000+</td>
+                            <td class="font-bold text-red-600">25%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="text-xs text-slate-500 mt-2"><strong>Progressive:</strong> Only the income within each bracket
+                    is taxed at that rate (e.g., if you earn $15,000 YTD, the first $11,000 is taxed at 0%, and only
+                    $4,000 is taxed at 15%)</p>
+
+                <h3 class="text-lg font-semibold mt-6 mb-3 text-slate-700">ISR GREP (Income Tax on Representation -
+                    Progressive)</h3>
+                <table class="tax-table">
+                    <thead>
+                        <tr>
+                            <th>Annual GREP Income (YTD)</th>
+                            <th>Tax Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>$0 - $25,000</td>
+                            <td class="font-bold text-amber-600">10%</td>
+                        </tr>
+                        <tr>
+                            <td>$25,000+</td>
+                            <td class="font-bold text-red-600">15%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="text-xs text-slate-500 mt-2"><strong>Note:</strong> GREP income is taxed separately from
+                    salary income using different brackets</p>
+            </div>
+
+            <!-- Examples Tab (NEW) -->
+            <div id="tab-examples" class="tab-content">
+                <h2 class="text-xl font-bold mb-4 text-slate-800">💡 Calculation Examples</h2>
+                <p class="text-sm text-slate-600 mb-4">Step-by-step breakdowns to help you understand how taxes are
+                    calculated.</p>
+
+                <div class="tax-example">
+                    <div class="tax-example-title">Example 1: Base Salary Only (Simple Case)</div>
+                    <div class="tax-example-step"><strong>Income:</strong> Base Salary = $2,000</div>
+                    <div class="tax-example-step"><strong>SS Calculation:</strong> $2,000 × 9.75% =
+                        <strong>$195.00</strong></div>
+                    <div class="tax-example-step"><strong>SE Calculation:</strong> $2,000 × 1.25% =
+                        <strong>$25.00</strong></div>
+                    <div class="tax-example-step"><strong>ISR:</strong> Depends on YTD cumulative (see progressive
+                        brackets)</div>
+                    <div class="tax-example-result">Total Deductions (SS + SE + ISR): $195.00 + $25.00 + ISR</div>
+                </div>
+
+                <div class="tax-example">
+                    <div class="tax-example-title">Example 2: Base Salary + GREP (Common Case)</div>
+                    <div class="tax-example-step"><strong>Income:</strong> Base Salary = $2,000, GREP = $500</div>
+                    <div class="tax-example-step"><strong>SS Calculation:</strong></div>
+                    <div class="tax-example-step ml-4">• Base: $2,000 × 9.75% = $195.00</div>
+                    <div class="tax-example-step ml-4">• GREP: $500 × 9.00% = $45.00</div>
+                    <div class="tax-example-step ml-4">• <strong>Total SS: $240.00</strong></div>
+                    <div class="tax-example-step"><strong>SE Calculation:</strong> $2,000 × 1.25% =
+                        <strong>$25.00</strong> (GREP excluded)</div>
+                    <div class="tax-example-step"><strong>ISR:</strong> Separate calculations for Salary ISR and GREP
+                        ISR</div>
+                    <div class="tax-example-result">Note: GREP uses different rates for both SS (9.00%) and ISR
+                        (separate brackets)</div>
+                </div>
+
+                <div class="tax-example">
+                    <div class="tax-example-title">Example 3: Base + GREP + XIII Month (Complex Case)</div>
+                    <div class="tax-example-step"><strong>Income:</strong> Base = $2,000, GREP = $500, XIII = $1,500
+                    </div>
+                    <div class="tax-example-step"><strong>SS Calculation:</strong></div>
+                    <div class="tax-example-step ml-4">• Base: $2,000 × 9.75% = $195.00</div>
+                    <div class="tax-example-step ml-4">• GREP: $500 × 9.00% = $45.00</div>
+                    <div class="tax-example-step ml-4">• XIII: $1,500 × 7.25% = $108.75</div>
+                    <div class="tax-example-step ml-4">• <strong>Total SS: $348.75</strong></div>
+                    <div class="tax-example-step"><strong>SE Calculation:</strong> $2,000 × 1.25% =
+                        <strong>$25.00</strong> (XIII & GREP excluded)</div>
+                    <div class="tax-example-result">Key: XIII Month gets special reduced SS rate (7.25%) and may have
+                        different ISR treatment</div>
+                </div>
+
+                <div class="tax-example">
+                    <div class="tax-example-title">Example 4: Progressive ISR (Year-to-Date Impact)</div>
+                    <div class="tax-example-step"><strong>Scenario:</strong> YTD Salary = $10,000 after 5 paychecks,
+                        this paycheck adds $2,500</div>
+                    <div class="tax-example-step"><strong>New YTD Total:</strong> $10,000 + $2,500 = $12,500</div>
+                    <div class="tax-example-step"><strong>ISR Calculation:</strong></div>
+                    <div class="tax-example-step ml-4">• First $11,000: 0% = $0</div>
+                    <div class="tax-example-step ml-4">• Remaining $1,500: 15% = $225</div>
+                    <div class="tax-example-step ml-4">• <strong>Total ISR YTD: $225</strong></div>
+                    <div class="tax-example-step ml-4">• Previous ISR paid: $0 (was below $11k)</div>
+                    <div class="tax-example-step ml-4">• <strong>ISR this paycheck: $225</strong></div>
+                    <div class="tax-example-result">This is why crossing a tax bracket can cause a larger deduction -
+                        you're "catching up" on the cumulative tax owed</div>
+                </div>
+            </div>
+
+            <!-- FAQ Tab (NEW) -->
+            <div id="tab-faq" class="tab-content">
+                <h2 class="text-xl font-bold mb-4 text-slate-800">❓ Frequently Asked Questions</h2>
+
+                <div class="mb-6">
+                    <h3 class="font-bold text-slate-700 mb-2">Q: Why is my SS different when I have GREP?</h3>
+                    <p class="text-sm text-slate-600 pl-4">A: GREP (Representation Allowance) is taxed at a lower SS
+                        rate (9.00%) compared to Base Salary (9.75%). This is mandated by Panamanian law. When you have
+                        both Base and GREP, your total SS deduction is calculated separately for each component and then
+                        summed. Hover over the SS value in the ledger to see the breakdown.</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-bold text-slate-700 mb-2">Q: How does progressive ISR work? Why did my deduction
+                        jump?</h3>
+                    <p class="text-sm text-slate-600 pl-4">A: ISR (Income Tax) is calculated on your <strong>cumulative
+                            year-to-date (YTD)</strong> income, not just the current paycheck. The tax brackets are
+                        progressive, meaning different portions of your income are taxed at different rates. When your
+                        YTD total crosses a bracket threshold (e.g., $11,000 or $50,000), the amount above that
+                        threshold is taxed at the higher rate. This is why you might see a larger ISR deduction when you
+                        get a bonus or your YTD crosses into a new bracket.</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-bold text-slate-700 mb-2">Q: What's the difference between "Gross Salary" and "Total
+                        Earnings"?</h3>
+                    <p class="text-sm text-slate-600 pl-4">A: <strong>Gross Salary</strong> is the sum of all taxable
+                        salary components (Base + Bonuses + Overtime + Vacation + XIII + Extra). This is the base for
+                        calculating SS, SE, and ISR on salary. <strong>Total Earnings</strong> includes Gross Salary
+                        plus GREP and Home Stipend. GREP and Home are treated differently for tax purposes (GREP has
+                        separate SS and ISR rates, Home is typically non-taxable).</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-bold text-slate-700 mb-2">Q: Why does my effective tax rate change each paycheck?
+                    </h3>
+                    <p class="text-sm text-slate-600 pl-4">A: Your effective rate (percentage shown below each tax
+                        value) changes because ISR is cumulative. Early in the year, you may still be in the 0% bracket,
+                        so you see no ISR. As your YTD grows and crosses thresholds, more of your income is taxed at
+                        higher rates, increasing your effective percentage. The YTD columns show your running cumulative
+                        effective rate for the year.</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-bold text-slate-700 mb-2">Q: The ISR graph shows "Paid" above "Legal". What does
+                        this mean?</h3>
+                    <p class="text-sm text-slate-600 pl-4">A: The <strong>Red Line (Paid)</strong> shows what your
+                        company has actually deducted from your paychecks so far. The <strong>Green Line
+                            (Legal)</strong> shows what the law says you owe based on your YTD income. If Paid is above
+                        Legal, you're "ahead" on taxes - the company has withheld more than required. This often happens
+                        when income is variable; the company withholds conservatively, and you may see lower deductions
+                        later or a refund during year-end reconciliation.</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-bold text-slate-700 mb-2">Q: What income types are excluded from SE (Educational
+                        Tax)?</h3>
+                    <p class="text-sm text-slate-600 pl-4">A: SE is calculated at 1.25% on <strong>Base Salary +
+                            Overtime + Vacation + Extra only</strong>. It explicitly excludes: GREP, Home Stipend, and
+                        QBP Bonuses. This is why your SE rate appears lower than expected when you have these additional
+                        income types.</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-bold text-slate-700 mb-2">Q: My payroll deduction doesn't match the calculator. What
+                        should I do?</h3>
+                    <p class="text-sm text-slate-600 pl-4">A: Small discrepancies can occur due to rounding differences
+                        or specific company accounting practices. If the difference is significant (more than a few
+                        dollars), double-check that you've entered all income components correctly (including toggling
+                        GREP, bonuses, etc.). If it still doesn't match, consult with your HR department - they may have
+                        additional context about special deductions or adjustments specific to your situation.</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-bold text-slate-700 mb-2">Q: Is my data safe? Where is it stored?</h3>
+                    <p class="text-sm text-slate-600 pl-4">A: Your data is <strong>100% client-side</strong> - it exists
+                        only in your browser's temporary memory (RAM) and is <strong>never transmitted to any
+                            server</strong>. There is no database, no backend, no cloud storage. If you refresh the
+                        page, all data is permanently lost unless you export it using the Export button. This
+                        "zero-knowledge" architecture ensures maximum privacy. You can verify this by disconnecting from
+                        the internet after loading the page - it will continue to work perfectly.</p>
                 </div>
             </div>
         </div>
@@ -394,8 +1035,8 @@
 
     <script>
         // --- HELPERS ---
-        const fmt = n => n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        const pct = (n, d) => d > 0 ? ((n/d)*100).toFixed(2) + '%' : '0.00%';
+        const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const pct = (n, d) => d > 0 ? ((n / d) * 100).toFixed(2) + '%' : '0.00%';
         const generateID = () => Date.now() + Math.floor(Math.random() * 1000000);
 
         // --- CONFIG ---
@@ -403,11 +1044,11 @@
         let chartSalInstance = null;
         let chartGrepInstance = null;
         let editingId = null;
-        
-        const SALARY_IDS = ['inpBase','inpQBP','inpOT','inpVac','inpXIII','inpExtra'];
-        const TAX_IDS = ['actSS','actSE','actISR','actISRGREP'];
+
+        const SALARY_IDS = ['inpBase', 'inpQBP', 'inpOT', 'inpVac', 'inpXIII', 'inpExtra'];
+        const TAX_IDS = ['actSS', 'actSE', 'actISR', 'actISRGREP'];
         // [UPDATED] Added SS_GREP (9.00%)
-        const RULES = { SS: 0.0975, SS_GREP: 0.09, SE: 0.0125, ISR_SAL: [{t:0,r:0}, {t:11000,r:0.15}, {t:50000,r:0.25}], ISR_GREP: [{t:0,r:0.10}, {t:25000,r:0.15}] };
+        const RULES = { SS: 0.0975, SS_GREP: 0.09, SE: 0.0125, ISR_SAL: [{ t: 0, r: 0 }, { t: 11000, r: 0.15 }, { t: 50000, r: 0.25 }], ISR_GREP: [{ t: 0, r: 0.10 }, { t: 25000, r: 0.15 }] };
         let lastDecSal = 0; let lastDecGrep = 0;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -421,9 +1062,9 @@
             if (!dateVal) return;
             const dObj = parseDate(dateVal);
             const m = dObj.getMonth(); const d = dObj.getDate();
-            const isWin = (m===3||m===7||m===11) && d<=15;
+            const isWin = (m === 3 || m === 7 || m === 11) && d <= 15;
             const btn = document.getElementById('btnTog_rowXIII');
-            if(isWin) { btn.classList.remove('hidden-row'); } else { btn.classList.add('hidden-row'); toggleRow('rowXIII', btn, false); }
+            if (isWin) { btn.classList.remove('hidden-row'); } else { btn.classList.add('hidden-row'); toggleRow('rowXIII', btn, false); }
         }
 
         function toggleRow(rowId, btn, force) {
@@ -446,146 +1087,164 @@
         }
 
         function calcTotal() {
-            let sumSal = 0; SALARY_IDS.forEach(id => { const el = document.getElementById(id); if(el && !el.closest('.hidden-row')) sumSal += parseFloat(el.value||0); });
-            document.getElementById('dispSalTotal').innerText = '$'+fmt(sumSal);
+            let sumSal = 0; SALARY_IDS.forEach(id => { const el = document.getElementById(id); if (el && !el.closest('.hidden-row')) sumSal += parseFloat(el.value || 0); });
+            document.getElementById('dispSalTotal').innerText = '$' + fmt(sumSal);
 
             let sumGrep = 0, sumHome = 0;
-            const grepEl = document.getElementById('inpGREP'); if(grepEl && !grepEl.closest('.hidden-row')) sumGrep = parseFloat(grepEl.value||0);
-            const homeEl = document.getElementById('inpHome'); if(homeEl) sumHome = parseFloat(homeEl.value||0);
-            document.getElementById('dispTotalEarnings').innerText = '$'+fmt(sumSal + sumGrep + sumHome);
+            const grepEl = document.getElementById('inpGREP'); if (grepEl && !grepEl.closest('.hidden-row')) sumGrep = parseFloat(grepEl.value || 0);
+            const homeEl = document.getElementById('inpHome'); if (homeEl) sumHome = parseFloat(homeEl.value || 0);
+            document.getElementById('dispTotalEarnings').innerText = '$' + fmt(sumSal + sumGrep + sumHome);
 
-            let sumTax = 0; TAX_IDS.forEach(id => { const el = document.getElementById(id); if(el && !el.closest('.hidden-row')) sumTax += parseFloat(el.value||0); });
-            document.getElementById('dispTotalTaxes').innerText = '$'+fmt(sumTax);
+            let sumTax = 0; TAX_IDS.forEach(id => { const el = document.getElementById(id); if (el && !el.closest('.hidden-row')) sumTax += parseFloat(el.value || 0); });
+            document.getElementById('dispTotalTaxes').innerText = '$' + fmt(sumTax);
         }
 
         function toggleModal(modalID) { const m = document.getElementById(modalID); m.classList.contains('hidden-row') ? (m.classList.remove('hidden-row'), m.classList.add('flex')) : (m.classList.add('hidden-row'), m.classList.remove('flex')); }
-        function toggleDecInput() { const c=document.getElementById('xiiiConfig'); c.classList.contains('hidden-row')?c.classList.remove('hidden-row'):c.classList.add('hidden-row'); }
+        function toggleDecInput() { const c = document.getElementById('xiiiConfig'); c.classList.contains('hidden-row') ? c.classList.remove('hidden-row') : c.classList.add('hidden-row'); }
+
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const allTabs = document.querySelectorAll('.tab-content');
+            allTabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active class from all buttons
+            const allBtns = document.querySelectorAll('.tab-btn');
+            allBtns.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected tab
+            const selectedTab = document.getElementById('tab-' + tabName);
+            if (selectedTab) selectedTab.classList.add('active');
+
+            // Activate corresponding button
+            const clickedBtn = event.target;
+            if (clickedBtn) clickedBtn.classList.add('active');
+        }
 
         // --- MATH ---
         function getTax(inc, brackets) {
-            let t=0; for(let i=brackets.length-1; i>=0; i--) { if(inc > brackets[i].t) { t += (inc - brackets[i].t)*brackets[i].r; inc = brackets[i].t; } } return t;
+            let t = 0; for (let i = brackets.length - 1; i >= 0; i--) { if (inc > brackets[i].t) { t += (inc - brackets[i].t) * brackets[i].r; inc = brackets[i].t; } } return t;
         }
 
         // --- ACTIONS ---
         function commit() {
-            const val = id => { const el=document.getElementById(id); return (!el||el.closest('.hidden-row'))?0:parseFloat(el.value||0); };
+            const val = id => { const el = document.getElementById(id); return (!el || el.closest('.hidden-row')) ? 0 : parseFloat(el.value || 0); };
             const date = document.getElementById('entryDate').value;
-            if(!date) return alert("Date required");
+            if (!date) return alert("Date required");
 
             const entry = {
                 id: editingId ? editingId : generateID(),
                 date,
                 base: val('inpBase'), qbp: val('inpQBP'), ot: val('inpOT'), vac: val('inpVac'),
                 xiii: val('inpXIII'), extra: val('inpExtra'), grep: val('inpGREP'), home: val('inpHome'),
-                actSS: parseFloat(document.getElementById('actSS').value||0), actSE: parseFloat(document.getElementById('actSE').value||0),
-                actISR: parseFloat(document.getElementById('actISR').value||0), actISRGREP: parseFloat(document.getElementById('actISRGREP').value||0),
-                ins: parseFloat(document.getElementById('inpIns').value||0),
+                actSS: parseFloat(document.getElementById('actSS').value || 0), actSE: parseFloat(document.getElementById('actSE').value || 0),
+                actISR: parseFloat(document.getElementById('actISR').value || 0), actISRGREP: parseFloat(document.getElementById('actISRGREP').value || 0),
+                ins: parseFloat(document.getElementById('inpIns').value || 0),
                 // FIXED 5 LOAN SLOTS
                 loan1: val('inpLoan1'), loan2: val('inpLoan2'), loan3: val('inpLoan3'), loan4: val('inpLoan4'), loan5: val('inpLoan5')
             };
-            
-            if(editingId) { const idx = entries.findIndex(e => e.id === editingId); if(idx !== -1) entries[idx] = entry; cancelEdit(); } 
+
+            if (editingId) { const idx = entries.findIndex(e => e.id === editingId); if (idx !== -1) entries[idx] = entry; cancelEdit(); }
             else { entries.push(entry); }
             refresh();
         }
 
         function editEntry(id) {
-            const e = entries.find(x => x.id === id); if(!e) return;
+            const e = entries.find(x => x.id === id); if (!e) return;
             editingId = id;
-            
+
             // Highlight Logic
-            entries.sort((a,b) => parseDate(a.date) - parseDate(b.date));
+            entries.sort((a, b) => parseDate(a.date) - parseDate(b.date));
             const sortIdx = entries.findIndex(x => x.id === id);
-            
+
             if (chartSalInstance) {
                 const activeElements = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }];
                 chartSalInstance.setActiveElements(activeElements);
                 chartSalInstance.tooltip.setActiveElements(activeElements);
                 chartSalInstance.update();
             }
-             if (chartGrepInstance) {
+            if (chartGrepInstance) {
                 const activeElements = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }];
                 chartGrepInstance.setActiveElements(activeElements);
                 chartGrepInstance.tooltip.setActiveElements(activeElements);
                 chartGrepInstance.update();
             }
 
-            const btn = document.getElementById('btnCommit'); btn.innerText = "Update Pay Stub"; btn.classList.remove('bg-slate-800','hover:bg-slate-900'); btn.classList.add('bg-blue-600','hover:bg-blue-700');
+            const btn = document.getElementById('btnCommit'); btn.innerText = "Update Pay Stub"; btn.classList.remove('bg-slate-800', 'hover:bg-slate-900'); btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
             document.getElementById('btnCancel').classList.remove('hidden-row'); document.getElementById('editorTitle').innerText = "Editing Entry...";
 
             document.getElementById('entryDate').value = e.date; checkXIIIWindow();
-            const set = (id,v) => document.getElementById(id).value = v;
-            set('inpBase',e.base); set('inpQBP',e.qbp); set('inpOT',e.ot); set('inpVac',e.vac);
-            set('inpXIII',e.xiii); set('inpExtra',e.extra); set('inpGREP',e.grep); set('inpHome',e.home);
-            set('actSS',e.actSS); set('actSE',e.actSE); set('actISR',e.actISR); set('actISRGREP',e.actISRGREP); set('inpIns',e.ins);
+            const set = (id, v) => document.getElementById(id).value = v;
+            set('inpBase', e.base); set('inpQBP', e.qbp); set('inpOT', e.ot); set('inpVac', e.vac);
+            set('inpXIII', e.xiii); set('inpExtra', e.extra); set('inpGREP', e.grep); set('inpHome', e.home);
+            set('actSS', e.actSS); set('actSE', e.actSE); set('actISR', e.actISR); set('actISRGREP', e.actISRGREP); set('inpIns', e.ins);
             // Loans
             set('inpLoan1', e.loan1); set('inpLoan2', e.loan2); set('inpLoan3', e.loan3); set('inpLoan4', e.loan4); set('inpLoan5', e.loan5);
 
-            const t = (rid, bid, v) => toggleRow(rid, document.getElementById(bid), v>0);
-            t('rowQBP','btnTog_rowQBP',e.qbp); t('rowOT','btnTog_rowOT',e.ot); t('rowVac','btnTog_rowVac',e.vac); t('rowXIII','btnTog_rowXIII',e.xiii); t('rowGREP','btnTog_rowGREP',e.grep);
+            const t = (rid, bid, v) => toggleRow(rid, document.getElementById(bid), v > 0);
+            t('rowQBP', 'btnTog_rowQBP', e.qbp); t('rowOT', 'btnTog_rowOT', e.ot); t('rowVac', 'btnTog_rowVac', e.vac); t('rowXIII', 'btnTog_rowXIII', e.xiii); t('rowGREP', 'btnTog_rowGREP', e.grep);
             // Loan Toggles
-            t('rowLoan1','btnTog_rowLoan1',e.loan1); t('rowLoan2','btnTog_rowLoan2',e.loan2); t('rowLoan3','btnTog_rowLoan3',e.loan3); t('rowLoan4','btnTog_rowLoan4',e.loan4); t('rowLoan5','btnTog_rowLoan5',e.loan5);
+            t('rowLoan1', 'btnTog_rowLoan1', e.loan1); t('rowLoan2', 'btnTog_rowLoan2', e.loan2); t('rowLoan3', 'btnTog_rowLoan3', e.loan3); t('rowLoan4', 'btnTog_rowLoan4', e.loan4); t('rowLoan5', 'btnTog_rowLoan5', e.loan5);
 
             calcTotal(); refresh();
         }
 
         function cancelEdit() {
             editingId = null; document.getElementById('editorTitle').innerText = "Editor";
-            const btn = document.getElementById('btnCommit'); btn.innerText = "Add Pay Stub"; btn.classList.add('bg-slate-800','hover:bg-slate-900'); btn.classList.remove('bg-blue-600','hover:bg-blue-700');
+            const btn = document.getElementById('btnCommit'); btn.innerText = "Add Pay Stub"; btn.classList.add('bg-slate-800', 'hover:bg-slate-900'); btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
             document.getElementById('btnCancel').classList.add('hidden-row');
-            
-            if(chartSalInstance) { chartSalInstance.setActiveElements([]); chartSalInstance.tooltip.setActiveElements([]); chartSalInstance.update(); }
-            if(chartGrepInstance) { chartGrepInstance.setActiveElements([]); chartGrepInstance.tooltip.setActiveElements([]); chartGrepInstance.update(); }
-            
+
+            if (chartSalInstance) { chartSalInstance.setActiveElements([]); chartSalInstance.tooltip.setActiveElements([]); chartSalInstance.update(); }
+            if (chartGrepInstance) { chartGrepInstance.setActiveElements([]); chartGrepInstance.tooltip.setActiveElements([]); chartGrepInstance.update(); }
+
             refresh();
         }
 
         function deleteEntry(id) {
-            if(confirm("Delete this entry permanently?")) {
+            if (confirm("Delete this entry permanently?")) {
                 const idx = entries.findIndex(e => e.id === id);
-                if(idx !== -1) { entries.splice(idx, 1); if(editingId === id) cancelEdit(); refresh(); }
+                if (idx !== -1) { entries.splice(idx, 1); if (editingId === id) cancelEdit(); refresh(); }
             }
         }
 
         // --- REFRESH LOGIC ---
         function refresh() {
-            entries.sort((a,b) => parseDate(a.date) - parseDate(b.date));
+            entries.sort((a, b) => parseDate(a.date) - parseDate(b.date));
             lastDecSal = parseFloat(document.getElementById('inpLastDecSal').value || 0); lastDecGrep = parseFloat(document.getElementById('inpLastDecGrep').value || 0);
 
             // Column Config
-            const sums = { qbp:0, ot:0, vac:0, xiii:0, extra:0, grep:0, home:0, l1:0, l2:0, l3:0, l4:0, l5:0 };
+            const sums = { qbp: 0, ot: 0, vac: 0, xiii: 0, extra: 0, grep: 0, home: 0, l1: 0, l2: 0, l3: 0, l4: 0, l5: 0 };
             let hasGrep = false;
             entries.forEach(e => {
-                sums.qbp+=e.qbp; sums.ot+=e.ot; sums.vac+=e.vac; sums.xiii+=e.xiii; sums.extra+=e.extra; sums.grep+=e.grep; sums.home+=e.home;
-                sums.l1+=e.loan1; sums.l2+=e.loan2; sums.l3+=e.loan3; sums.l4+=e.loan4; sums.l5+=e.loan5;
-                if(e.grep > 0) hasGrep = true;
+                sums.qbp += e.qbp; sums.ot += e.ot; sums.vac += e.vac; sums.xiii += e.xiii; sums.extra += e.extra; sums.grep += e.grep; sums.home += e.home;
+                sums.l1 += e.loan1; sums.l2 += e.loan2; sums.l3 += e.loan3; sums.l4 += e.loan4; sums.l5 += e.loan5;
+                if (e.grep > 0) hasGrep = true;
             });
 
             const cols = [
-                {id:'act', lbl:'', cls:'head-fix sticky-col'}, {id:'date', lbl:'Date', cls:'head-fix sticky-col pl-8'},
-                {id:'base', lbl:'Base', cls:'head-inc'},
-                ...(sums.qbp>0 ? [{id:'qbp',lbl:'QBP',cls:'head-inc'}] : []), ...(sums.ot>0 ? [{id:'ot',lbl:'OT',cls:'head-inc'}] : []),
-                ...(sums.vac>0 ? [{id:'vac',lbl:'Vac',cls:'head-inc'}] : []), ...(sums.xiii>0 ? [{id:'xiii',lbl:'XIII',cls:'head-inc'}] : []),
-                ...(sums.extra>0 ? [{id:'extra',lbl:'Extra',cls:'head-inc'}] : []),
-                {id:'gross', lbl:'GROSS SALARY', cls:'head-inc font-bold border-l-2 border-r-2'},
-                ...(sums.grep>0 ? [{id:'grep',lbl:'GREP',cls:'head-grep border-r-2'}] : []), ...(sums.home>0 ? [{id:'home',lbl:'Home',cls:'head-home border-r-2'}] : []),
-                {id:'ss', lbl:'SS', cls:'head-tax border-l-2'}, {id:'se', lbl:'SE', cls:'head-tax'}, {id:'isrS', lbl:'ISR Sal', cls:'head-tax'},
-                ...(sums.grep>0 ? [{id:'isrG',lbl:'ISR GREP',cls:'head-tax'}] : []),
+                { id: 'act', lbl: '', cls: 'head-fix sticky-col' }, { id: 'date', lbl: 'Date', cls: 'head-fix sticky-col pl-8' },
+                { id: 'base', lbl: 'Base', cls: 'head-inc' },
+                ...(sums.qbp > 0 ? [{ id: 'qbp', lbl: 'QBP', cls: 'head-inc' }] : []), ...(sums.ot > 0 ? [{ id: 'ot', lbl: 'OT', cls: 'head-inc' }] : []),
+                ...(sums.vac > 0 ? [{ id: 'vac', lbl: 'Vac', cls: 'head-inc' }] : []), ...(sums.xiii > 0 ? [{ id: 'xiii', lbl: 'XIII', cls: 'head-inc' }] : []),
+                ...(sums.extra > 0 ? [{ id: 'extra', lbl: 'Extra', cls: 'head-inc' }] : []),
+                { id: 'gross', lbl: 'GROSS SALARY', cls: 'head-inc font-bold border-l-2 border-r-2' },
+                ...(sums.grep > 0 ? [{ id: 'grep', lbl: 'GREP', cls: 'head-grep border-r-2' }] : []), ...(sums.home > 0 ? [{ id: 'home', lbl: 'Home', cls: 'head-home border-r-2' }] : []),
+                { id: 'ss', lbl: 'SS', cls: 'head-tax border-l-2' }, { id: 'se', lbl: 'SE', cls: 'head-tax' }, { id: 'isrS', lbl: 'ISR Sal', cls: 'head-tax' },
+                ...(sums.grep > 0 ? [{ id: 'isrG', lbl: 'ISR GREP', cls: 'head-tax' }] : []),
                 // Deductions (Conditional)
-                {id:'ins', lbl:'Ins', cls:'head-ded border-l-2'},
-                ...(sums.l1>0 ? [{id:'loan1',lbl:'Loan 1',cls:'head-ded'}] : []), ...(sums.l2>0 ? [{id:'loan2',lbl:'Loan 2',cls:'head-ded'}] : []),
-                ...(sums.l3>0 ? [{id:'loan3',lbl:'Loan 3',cls:'head-ded'}] : []), ...(sums.l4>0 ? [{id:'loan4',lbl:'Loan 4',cls:'head-ded'}] : []),
-                ...(sums.l5>0 ? [{id:'loan5',lbl:'Loan 5',cls:'head-ded'}] : []),
+                { id: 'ins', lbl: 'Ins', cls: 'head-ded border-l-2' },
+                ...(sums.l1 > 0 ? [{ id: 'loan1', lbl: 'Loan 1', cls: 'head-ded' }] : []), ...(sums.l2 > 0 ? [{ id: 'loan2', lbl: 'Loan 2', cls: 'head-ded' }] : []),
+                ...(sums.l3 > 0 ? [{ id: 'loan3', lbl: 'Loan 3', cls: 'head-ded' }] : []), ...(sums.l4 > 0 ? [{ id: 'loan4', lbl: 'Loan 4', cls: 'head-ded' }] : []),
+                ...(sums.l5 > 0 ? [{ id: 'loan5', lbl: 'Loan 5', cls: 'head-ded' }] : []),
                 // YTD
-                {id:'ygross', lbl:'YTD Gross', cls:'head-ytd border-l-2 font-bold'}, ...(sums.grep>0 ? [{id:'ygrep',lbl:'YTD GREP',cls:'head-ytd'}] : []),
-                {id:'yss', lbl:'YTD SS', cls:'head-ytd border-l-2'}, {id:'yse', lbl:'YTD SE', cls:'head-ytd'}, {id:'yisrS', lbl:'YTD ISR Sal', cls:'head-ytd'},
-                ...(sums.grep>0 ? [{id:'yisrG',lbl:'YTD ISR GREP',cls:'head-ytd'}] : []), {id:'ynet', lbl:'YTD Net', cls:'head-ytd font-bold border-l-2'}
+                { id: 'ygross', lbl: 'YTD Gross', cls: 'head-ytd border-l-2 font-bold' }, ...(sums.grep > 0 ? [{ id: 'ygrep', lbl: 'YTD GREP', cls: 'head-ytd' }] : []),
+                { id: 'yss', lbl: 'YTD SS', cls: 'head-ytd border-l-2' }, { id: 'yse', lbl: 'YTD SE', cls: 'head-ytd' }, { id: 'yisrS', lbl: 'YTD ISR Sal', cls: 'head-ytd' },
+                ...(sums.grep > 0 ? [{ id: 'yisrG', lbl: 'YTD ISR GREP', cls: 'head-ytd' }] : []), { id: 'ynet', lbl: 'YTD Net', cls: 'head-ytd font-bold border-l-2' }
             ];
 
             const thead = document.querySelector('#mainTable thead'); thead.innerHTML = `<tr>${cols.map(c => `<th class="p-3 ${c.cls}">${c.lbl}</th>`).join('')}</tr>`;
 
-            let ytd = { grossSal:0, grepTotal:0, homeTotal:0, net:0, salBase:0, grepBase:0, actSS:0, actSE:0, actISR:0, actISRG:0, isrSalPaid:0, isrGrepPaid:0, seBase:0, totalTax:0, totalDed:0 };
-            const chartData = { sal: { paid:[], leg:[], labels:[] }, grep: { paid:[], leg:[], labels:[] } };
+            let ytd = { grossSal: 0, grepTotal: 0, homeTotal: 0, net: 0, salBase: 0, grepBase: 0, actSS: 0, actSE: 0, actISR: 0, actISRG: 0, isrSalPaid: 0, isrGrepPaid: 0, seBase: 0, totalTax: 0, totalDed: 0 };
+            const chartData = { sal: { paid: [], leg: [], labels: [] }, grep: { paid: [], leg: [], labels: [] } };
             const tbody = document.querySelector('#mainTable tbody'); tbody.innerHTML = '';
 
             entries.forEach(e => {
@@ -594,7 +1253,7 @@
                 const loanSum = e.loan1 + e.loan2 + e.loan3 + e.loan4 + e.loan5;
                 const otherDed = e.ins + loanSum;
 
-                ytd.salBase += salGross; ytd.grepBase += e.grep; ytd.seBase += (e.base + e.ot + e.vac + e.extra); 
+                ytd.salBase += salGross; ytd.grepBase += e.grep; ytd.seBase += (e.base + e.ot + e.vac + e.extra);
                 ytd.grossSal += salGross; ytd.grepTotal += e.grep; ytd.homeTotal += e.home;
                 ytd.actSS += e.actSS; ytd.actSE += e.actSE; ytd.actISR += e.actISR; ytd.actISRG += e.actISRGREP;
                 ytd.totalTax += actTax; ytd.totalDed += otherDed; ytd.isrSalPaid += e.actISR; ytd.isrGrepPaid += e.actISRGREP;
@@ -613,19 +1272,19 @@
                 let tr = `<tr class="${rowClass}">`;
                 cols.forEach(c => {
                     let val = '-'; let css = `p-3 ${c.cls} bg-transparent`;
-                    if(c.id==='act') val = `<div class="flex space-x-1"><button onclick="editEntry(${e.id})" class="text-blue-400 hover:text-blue-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button><button onclick="deleteEntry(${e.id})" class="text-red-300 hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>`;
-                    else if(c.id==='date') { val = e.date; css += ' font-medium text-slate-700'; }
-                    else if(['base','qbp','ot','vac','xiii','extra'].includes(c.id)) { if(e[c.id]>0) val='$'+fmt(e[c.id]); css+=' text-slate-500'; }
-                    else if(c.id==='gross') { val='$'+fmt(salGross); css+=' font-bold text-blue-700 border-l-2 border-r-2 border-slate-100'; }
-                    else if(c.id==='grep') { if(e.grep>0) val='$'+fmt(e.grep); css+=' text-purple-700 border-r-2'; }
-                    else if(c.id==='home') { if(e.home>0) val='$'+fmt(e.home); css+=' text-emerald-700 border-r-2'; }
+                    if (c.id === 'act') val = `<div class="flex space-x-1"><button onclick="editEntry(${e.id})" class="text-blue-400 hover:text-blue-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button><button onclick="deleteEntry(${e.id})" class="text-red-300 hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>`;
+                    else if (c.id === 'date') { val = e.date; css += ' font-medium text-slate-700'; }
+                    else if (['base', 'qbp', 'ot', 'vac', 'xiii', 'extra'].includes(c.id)) { if (e[c.id] > 0) val = '$' + fmt(e[c.id]); css += ' text-slate-500'; }
+                    else if (c.id === 'gross') { val = '$' + fmt(salGross); css += ' font-bold text-blue-700 border-l-2 border-r-2 border-slate-100'; }
+                    else if (c.id === 'grep') { if (e.grep > 0) val = '$' + fmt(e.grep); css += ' text-purple-700 border-r-2'; }
+                    else if (c.id === 'home') { if (e.home > 0) val = '$' + fmt(e.home); css += ' text-emerald-700 border-r-2'; }
                     // [UPDATED] Smart Tooltip Logic for SS
-                    else if(c.id==='ss') { 
+                    else if (c.id === 'ss') {
                         let valStr = '$' + fmt(e.actSS);
                         let pctVal = 0;
                         let tooltip = "";
                         let decoration = "";
-                        
+
                         if (e.grep > 0) {
                             const theorySal = salGross * RULES.SS;
                             const theoryGrep = e.grep * RULES.SS_GREP;
@@ -637,17 +1296,17 @@
                         } else {
                             pctVal = pct(e.actSS, salGross);
                         }
-                        
-                        val = `<span class="cell-val ${decoration}" title="${tooltip}">${valStr}</span><span class="cell-pct">${pctVal}</span>`; 
-                        css+=' border-l-2 border-orange-100'; 
+
+                        val = `<span class="cell-val ${decoration}" title="${tooltip}">${valStr}</span><span class="cell-pct">${pctVal}</span>`;
+                        css += ' border-l-2 border-orange-100';
                     }
-                    else if(c.id==='se') { val = `<span class="cell-val">$${fmt(e.actSE)}</span><span class="cell-pct">${pct(e.actSE, e.base+e.ot+e.vac+e.extra)}</span>`; }
-                    else if(c.id==='isrS') { val = `<span class="cell-val">$${fmt(e.actISR)}</span><span class="cell-pct">${pct(e.actISR, salGross)}</span>`; }
-                    else if(c.id==='isrG') { val = `<span class="cell-val">$${fmt(e.actISRGREP)}</span><span class="cell-pct">${pct(e.actISRGREP, e.grep)}</span>`; }
-                    else if(['ins','loan1','loan2','loan3','loan4','loan5'].includes(c.id)) { if(e[c.id]>0) val='$'+fmt(e[c.id]); css+=' text-red-800'; }
-                    else if(c.id==='ygross') { val='$'+fmt(ytd.grossSal); css+=' font-bold text-slate-600 border-l-2 border-slate-200'; }
-                    else if(c.id==='ygrep') { val='$'+fmt(ytd.grepTotal); css+=' text-slate-500'; }
-                    else if(c.id==='yss') { 
+                    else if (c.id === 'se') { val = `<span class="cell-val">$${fmt(e.actSE)}</span><span class="cell-pct">${pct(e.actSE, e.base + e.ot + e.vac + e.extra)}</span>`; }
+                    else if (c.id === 'isrS') { val = `<span class="cell-val">$${fmt(e.actISR)}</span><span class="cell-pct">${pct(e.actISR, salGross)}</span>`; }
+                    else if (c.id === 'isrG') { val = `<span class="cell-val">$${fmt(e.actISRGREP)}</span><span class="cell-pct">${pct(e.actISRGREP, e.grep)}</span>`; }
+                    else if (['ins', 'loan1', 'loan2', 'loan3', 'loan4', 'loan5'].includes(c.id)) { if (e[c.id] > 0) val = '$' + fmt(e[c.id]); css += ' text-red-800'; }
+                    else if (c.id === 'ygross') { val = '$' + fmt(ytd.grossSal); css += ' font-bold text-slate-600 border-l-2 border-slate-200'; }
+                    else if (c.id === 'ygrep') { val = '$' + fmt(ytd.grepTotal); css += ' text-slate-500'; }
+                    else if (c.id === 'yss') {
                         const ytdTheorySal = ytd.salBase * RULES.SS;
                         const ytdTheoryGrep = ytd.grepBase * RULES.SS_GREP;
                         const ytdTheoryTotal = ytdTheorySal + ytdTheoryGrep;
@@ -661,80 +1320,83 @@
                         } else {
                             ytdSSPctVal = pct(ytd.actSS, ytd.salBase);
                         }
-                        val = `<span class="cell-val ${ytdSSDecoration}" title="${ytdSSTooltip}">$${fmt(ytd.actSS)}</span><span class="cell-pct">${ytdSSPctVal}</span>`; 
-                        css+=' border-l-2 border-slate-200'; 
+                        val = `<span class="cell-val ${ytdSSDecoration}" title="${ytdSSTooltip}">$${fmt(ytd.actSS)}</span><span class="cell-pct">${ytdSSPctVal}</span>`;
+                        css += ' border-l-2 border-slate-200';
                     }
-                    else if(c.id==='yse') { val = `<span class="cell-val">$${fmt(ytd.actSE)}</span><span class="cell-pct">${pct(ytd.actSE, ytd.seBase)}</span>`; }
-                    else if(c.id==='yisrS') { val = `<span class="cell-val">$${fmt(ytd.actISR)}</span><span class="cell-pct">${pct(ytd.actISR, ytd.salBase)}</span>`; }
-                    else if(c.id==='yisrG') { val = `<span class="cell-val">$${fmt(ytd.actISRG)}</span><span class="cell-pct">${pct(ytd.actISRG, ytd.grepBase)}</span>`; }
-                    else if(c.id==='ynet') { val='$'+fmt(ytd.net); css+=' font-bold text-emerald-600 border-l-2 border-slate-200'; }
+                    else if (c.id === 'yse') { val = `<span class="cell-val">$${fmt(ytd.actSE)}</span><span class="cell-pct">${pct(ytd.actSE, ytd.seBase)}</span>`; }
+                    else if (c.id === 'yisrS') { val = `<span class="cell-val">$${fmt(ytd.actISR)}</span><span class="cell-pct">${pct(ytd.actISR, ytd.salBase)}</span>`; }
+                    else if (c.id === 'yisrG') { val = `<span class="cell-val">$${fmt(ytd.actISRG)}</span><span class="cell-pct">${pct(ytd.actISRG, ytd.grepBase)}</span>`; }
+                    else if (c.id === 'ynet') { val = '$' + fmt(ytd.net); css += ' font-bold text-emerald-600 border-l-2 border-slate-200'; }
                     tr += `<td class="${css}">${val}</td>`;
                 });
                 tr += '</tr>'; tbody.insertAdjacentHTML('beforeend', tr);
             });
 
             // Update KPIs
-            document.getElementById('kpiCFSal').innerText = '$'+fmt(ytd.grossSal); document.getElementById('kpiCFGrep').innerText = '$'+fmt(ytd.grepTotal); document.getElementById('kpiCFHome').innerText = '$'+fmt(ytd.homeTotal); document.getElementById('kpiCFTotal').innerText = '$'+fmt(ytd.grossSal + ytd.grepTotal + ytd.homeTotal);
-            document.getElementById('kpiCFTax').innerText = '-$'+fmt(ytd.totalTax); document.getElementById('kpiCFDed').innerText = '-$'+fmt(ytd.totalDed); document.getElementById('kpiCFNet').innerText = '$'+fmt(ytd.net);
+            document.getElementById('kpiCFSal').innerText = '$' + fmt(ytd.grossSal); document.getElementById('kpiCFGrep').innerText = '$' + fmt(ytd.grepTotal); document.getElementById('kpiCFHome').innerText = '$' + fmt(ytd.homeTotal); document.getElementById('kpiCFTotal').innerText = '$' + fmt(ytd.grossSal + ytd.grepTotal + ytd.homeTotal);
+            document.getElementById('kpiCFTax').innerText = '-$' + fmt(ytd.totalTax); document.getElementById('kpiCFDed').innerText = '-$' + fmt(ytd.totalDed); document.getElementById('kpiCFNet').innerText = '$' + fmt(ytd.net);
 
             // XIII Smart Logic
             const editorDateVal = document.getElementById('entryDate').value; let referenceDate = new Date(); if (editorDateVal) referenceDate = parseDate(editorDateVal);
             const m = referenceDate.getMonth(); const d = referenceDate.getDate(); const year = referenceDate.getFullYear();
             let xiiiStart, xiiiEnd, currentPeriod;
-            if (m < 3 || (m===3 && d<=15)) { currentPeriod = "APRIL (1st)"; xiiiStart = new Date(year-1, 11, 16); xiiiEnd = new Date(year, 3, 15); } 
-            else if (m < 7 || (m===7 && d<=15)) { currentPeriod = "AUGUST (2nd)"; xiiiStart = new Date(year, 3, 16); xiiiEnd = new Date(year, 7, 15); } 
+            if (m < 3 || (m === 3 && d <= 15)) { currentPeriod = "APRIL (1st)"; xiiiStart = new Date(year - 1, 11, 16); xiiiEnd = new Date(year, 3, 15); }
+            else if (m < 7 || (m === 7 && d <= 15)) { currentPeriod = "AUGUST (2nd)"; xiiiStart = new Date(year, 3, 16); xiiiEnd = new Date(year, 7, 15); }
             else { currentPeriod = "DECEMBER (3rd)"; xiiiStart = new Date(year, 7, 16); xiiiEnd = new Date(year, 11, 15); }
-            
+
             let xiiiSalSum = 0; let xiiiGrepSum = 0; let entryCountInWindow = 0; let firstEntryDate = null;
             if (currentPeriod === "APRIL (1st)") { xiiiSalSum += lastDecSal; xiiiGrepSum += lastDecGrep; }
-            entries.forEach(e => { const eDate = parseDate(e.date); if (eDate >= xiiiStart && eDate <= xiiiEnd) { 
-                xiiiSalSum += (e.base + e.ot + e.vac + e.extra); 
-                if (e.xiii > 0) { } else { xiiiGrepSum += e.grep; }
-                entryCountInWindow++; if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate; 
-            } });
-            
+            entries.forEach(e => {
+                const eDate = parseDate(e.date); if (eDate >= xiiiStart && eDate <= xiiiEnd) {
+                    xiiiSalSum += (e.base + e.ot + e.vac + e.extra);
+                    if (e.xiii > 0) { } else { xiiiGrepSum += e.grep; }
+                    entryCountInWindow++; if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate;
+                }
+            });
+
             // Smart Projection
             let isProjected = false;
-             if (currentPeriod === "APRIL (1st)" && lastDecSal === 0 && entryCountInWindow > 0) {
-                const windowStart = new Date(year-1, 11, 16); const daysDiff = (firstEntryDate - windowStart) / (1000 * 60 * 60 * 24);
+            if (currentPeriod === "APRIL (1st)" && lastDecSal === 0 && entryCountInWindow > 0) {
+                const windowStart = new Date(year - 1, 11, 16); const daysDiff = (firstEntryDate - windowStart) / (1000 * 60 * 60 * 24);
                 if (daysDiff > 10) { const missingChecks = Math.floor(daysDiff / 14); if (missingChecks > 0) { const avgSal = xiiiSalSum / entryCountInWindow; const avgGrep = xiiiGrepSum / entryCountInWindow; xiiiSalSum += (avgSal * missingChecks); xiiiGrepSum += (avgGrep * missingChecks); isProjected = true; } }
             }
-            document.getElementById('kpiXIIIVal').innerText = '$'+fmt(xiiiSalSum/12); document.getElementById('kpiXIIIGrepVal').innerText = '$'+fmt(xiiiGrepSum/12); document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} ${isProjected ? '(Projected)' : 'Est.'}`;
+            document.getElementById('kpiXIIIVal').innerText = '$' + fmt(xiiiSalSum / 12); document.getElementById('kpiXIIIGrepVal').innerText = '$' + fmt(xiiiGrepSum / 12); document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} ${isProjected ? '(Projected)' : 'Est.'}`;
 
             // Ded/Charts
-            const totalIns = entries.reduce((s,e)=>s+e.ins, 0); const totalLoans = entries.reduce((s,e)=>s+e.loan1+e.loan2+e.loan3+e.loan4+e.loan5, 0); const totalOther = totalIns + totalLoans;
+            const totalIns = entries.reduce((s, e) => s + e.ins, 0); const totalLoans = entries.reduce((s, e) => s + e.loan1 + e.loan2 + e.loan3 + e.loan4 + e.loan5, 0); const totalOther = totalIns + totalLoans;
             const cardDed = document.getElementById('cardDed');
-            if (totalOther > 0) { cardDed.classList.remove('opacity-25', 'pointer-events-none'); 
-                let dedHtml = `<tr><td class="py-1 text-slate-500">Insurance</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(totalIns)}</td></tr>`;
-                const lSums = [entries.reduce((s,e)=>s+e.loan1,0), entries.reduce((s,e)=>s+e.loan2,0), entries.reduce((s,e)=>s+e.loan3,0), entries.reduce((s,e)=>s+e.loan4,0), entries.reduce((s,e)=>s+e.loan5,0)];
-                lSums.forEach((sum, i) => { if(sum>0) dedHtml+=`<tr><td class="py-1 text-slate-500">Loan ${i+1}</td><td class="py-1 text-right font-bold text-slate-700">${'$'+fmt(sum)}</td></tr>`; });
-                dedHtml += `<tr class="border-t border-slate-100 mt-2"><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">${'$'+fmt(totalOther)}</td></tr>`;
+            if (totalOther > 0) {
+                cardDed.classList.remove('opacity-25', 'pointer-events-none');
+                let dedHtml = `<tr><td class="py-1 text-slate-500">Insurance</td><td class="py-1 text-right font-bold text-slate-700">${'$' + fmt(totalIns)}</td></tr>`;
+                const lSums = [entries.reduce((s, e) => s + e.loan1, 0), entries.reduce((s, e) => s + e.loan2, 0), entries.reduce((s, e) => s + e.loan3, 0), entries.reduce((s, e) => s + e.loan4, 0), entries.reduce((s, e) => s + e.loan5, 0)];
+                lSums.forEach((sum, i) => { if (sum > 0) dedHtml += `<tr><td class="py-1 text-slate-500">Loan ${i + 1}</td><td class="py-1 text-right font-bold text-slate-700">${'$' + fmt(sum)}</td></tr>`; });
+                dedHtml += `<tr class="border-t border-slate-100 mt-2"><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">${'$' + fmt(totalOther)}</td></tr>`;
                 document.getElementById('kpiDedTable').innerHTML = dedHtml;
             } else { cardDed.classList.add('opacity-25', 'pointer-events-none'); document.getElementById('kpiDedTable').innerHTML = `<tr><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">$0.00</td></tr>`; }
 
-            const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL); document.getElementById('kpiSalPaidVal').innerText = '$'+fmt(ytd.isrSalPaid); document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase); document.getElementById('kpiSalLegVal').innerText = '$'+fmt(legSalTax); document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase);
+            const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL); document.getElementById('kpiSalPaidVal').innerText = '$' + fmt(ytd.isrSalPaid); document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase); document.getElementById('kpiSalLegVal').innerText = '$' + fmt(legSalTax); document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase);
             chartSalInstance = updateMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg);
 
-            const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP); document.getElementById('kpiGrepPaidVal').innerText = '$'+fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$'+fmt(legGrepTax); document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase);
+            const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP); document.getElementById('kpiGrepPaidVal').innerText = '$' + fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$' + fmt(legGrepTax); document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase);
             chartGrepInstance = updateMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg);
 
             if (!hasGrep) document.getElementById('cardGrep').classList.add('opacity-50'); else document.getElementById('cardGrep').classList.remove('opacity-50');
-            
+
             if (editingId) {
                 const sortIdx = entries.findIndex(x => x.id === editingId);
                 if (sortIdx !== -1) {
-                    if(chartSalInstance) { const ae = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }]; chartSalInstance.setActiveElements(ae); chartSalInstance.tooltip.setActiveElements(ae); chartSalInstance.update(); }
-                    if(chartGrepInstance) { const ae = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }]; chartGrepInstance.setActiveElements(ae); chartGrepInstance.tooltip.setActiveElements(ae); chartGrepInstance.update(); }
+                    if (chartSalInstance) { const ae = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }]; chartSalInstance.setActiveElements(ae); chartSalInstance.tooltip.setActiveElements(ae); chartSalInstance.update(); }
+                    if (chartGrepInstance) { const ae = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }]; chartGrepInstance.setActiveElements(ae); chartGrepInstance.tooltip.setActiveElements(ae); chartGrepInstance.update(); }
                 }
             }
         }
 
         function parseDate(dateStr) { if (!dateStr) return new Date(); if (dateStr.includes('/')) { const [m, d, y] = dateStr.split('/').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } else if (dateStr.includes('-')) { const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } return new Date(dateStr); }
-        
+
         function updateMicroChart(canvasId, instance, paidData, legData) {
             // Update Existing
             if (instance) {
-                instance.data.labels = paidData.map(()=>'');
+                instance.data.labels = paidData.map(() => '');
                 instance.data.datasets[0].data = paidData;
                 instance.data.datasets[1].data = legData;
                 instance.update('none'); // 'none' mode prevents animation flicker
@@ -742,75 +1404,76 @@
             }
             // Create New
             const ctx = document.getElementById(canvasId);
-            return new Chart(ctx, { 
-                type: 'line', 
-                data: { 
-                    labels: paidData.map(()=>''), 
-                    datasets: [ 
-                        { data:paidData, borderColor:'#ef4444', borderWidth:2, pointRadius:0, tension:0.3 }, 
-                        { data:legData, borderColor:'#10b981', borderWidth:2, borderDash:[2,2], pointRadius:0, tension:0.3 } 
-                    ] 
-                }, 
-                options: { 
-                    responsive:true, 
-                    maintainAspectRatio:false, 
-                    plugins:{legend:{display:false}, tooltip:{enabled:false}}, 
-                    scales:{x:{display:false}, y:{display:false}}, 
-                    layout: { padding: 5 } 
-                } 
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: paidData.map(() => ''),
+                    datasets: [
+                        { data: paidData, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, tension: 0.3 },
+                        { data: legData, borderColor: '#10b981', borderWidth: 2, borderDash: [2, 2], pointRadius: 0, tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { display: false }, y: { display: false } },
+                    layout: { padding: 5 }
+                }
             });
         }
 
-        function exportCSV(){
-            if(!entries.length && lastDecSal === 0 && lastDecGrep === 0) return alert("No Data");
-            const h=['ID','Date','Base','QBP','OT','Vac','XIII','Extra','GREP','Home','SS','SE','ISR_S','ISR_G','Ins','Loan1','Loan2','Loan3','Loan4','Loan5'];
-            const r=entries.map(e=> {
+        function exportCSV() {
+            if (!entries.length && lastDecSal === 0 && lastDecGrep === 0) return alert("No Data");
+            const h = ['ID', 'Date', 'Base', 'QBP', 'OT', 'Vac', 'XIII', 'Extra', 'GREP', 'Home', 'SS', 'SE', 'ISR_S', 'ISR_G', 'Ins', 'Loan1', 'Loan2', 'Loan3', 'Loan4', 'Loan5'];
+            const r = entries.map(e => {
                 const d = parseDate(e.date);
-                const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-                return [e.id,iso,e.base,e.qbp,e.ot,e.vac,e.xiii,e.extra,e.grep,e.home,e.actSS,e.actSE,e.actISR,e.actISRGREP,e.ins,e.loan1,e.loan2,e.loan3,e.loan4,e.loan5];
+                const iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                return [e.id, iso, e.base, e.qbp, e.ot, e.vac, e.xiii, e.extra, e.grep, e.home, e.actSS, e.actSE, e.actISR, e.actISRGREP, e.ins, e.loan1, e.loan2, e.loan3, e.loan4, e.loan5];
             });
             // APPEND CONFIG ROW
-            r.push(['META','CONFIG', lastDecSal, lastDecGrep]);
-            
-            const csv="data:text/csv;charset=utf-8,"+h.join(",")+"\n"+r.map(v=>v.join(",")).join("\n");
-            const l=document.createElement("a"); l.href=encodeURI(csv); l.download="payroll.csv"; l.click();
+            r.push(['META', 'CONFIG', lastDecSal, lastDecGrep]);
+
+            const csv = "data:text/csv;charset=utf-8," + h.join(",") + "\n" + r.map(v => v.join(",")).join("\n");
+            const l = document.createElement("a"); l.href = encodeURI(csv); l.download = "payroll.csv"; l.click();
         }
-        
-        function importCSV(inp){
-            const f=inp.files[0]; if(!f) return;
-            const r=new FileReader();
-            r.onload=e=>{
-                const l=e.target.result.split("\n");
-                for(let i=1;i<l.length;i++){
-                    const c=l[i].split(",");
-                    
+
+        function importCSV(inp) {
+            const f = inp.files[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = e => {
+                const l = e.target.result.split("\n");
+                for (let i = 1; i < l.length; i++) {
+                    const c = l[i].split(",");
+
                     // META CONFIG CHECK
-                    if(c[0] === 'META' && c[1] === 'CONFIG') {
+                    if (c[0] === 'META' && c[1] === 'CONFIG') {
                         document.getElementById('inpLastDecSal').value = c[2] || 0;
                         document.getElementById('inpLastDecGrep').value = c[3] || 0;
                         continue;
                     }
 
-                    if(c.length<15) continue;
+                    if (c.length < 15) continue;
                     let newId = parseInt(c[0]);
                     if (entries.some(ex => ex.id === newId)) newId = generateID();
-                    
-                    let l1=0,l2=0,l3=0,l4=0,l5=0;
+
+                    let l1 = 0, l2 = 0, l3 = 0, l4 = 0, l5 = 0;
                     // Simplified: Assume columns exist if present
-                    l1=parseFloat(c[15]||0); l2=parseFloat(c[16]||0); l3=parseFloat(c[17]||0); l4=parseFloat(c[18]||0); l5=parseFloat(c[19]||0);
+                    l1 = parseFloat(c[15] || 0); l2 = parseFloat(c[16] || 0); l3 = parseFloat(c[17] || 0); l4 = parseFloat(c[18] || 0); l5 = parseFloat(c[19] || 0);
 
                     entries.push({
-                        id:newId, date:c[1], base:parseFloat(c[2]), qbp:parseFloat(c[3]), ot:parseFloat(c[4]),
-                        vac:parseFloat(c[5]), xiii:parseFloat(c[6]), extra:parseFloat(c[7]), grep:parseFloat(c[8]), home:parseFloat(c[9]),
-                        actSS:parseFloat(c[10]), actSE:parseFloat(c[11]), actISR:parseFloat(c[12]), actISRGREP:parseFloat(c[13]),
-                        ins:parseFloat(c[14]), loan1:l1, loan2:l2, loan3:l3, loan4:l4, loan5:l5
+                        id: newId, date: c[1], base: parseFloat(c[2]), qbp: parseFloat(c[3]), ot: parseFloat(c[4]),
+                        vac: parseFloat(c[5]), xiii: parseFloat(c[6]), extra: parseFloat(c[7]), grep: parseFloat(c[8]), home: parseFloat(c[9]),
+                        actSS: parseFloat(c[10]), actSE: parseFloat(c[11]), actISR: parseFloat(c[12]), actISRGREP: parseFloat(c[13]),
+                        ins: parseFloat(c[14]), loan1: l1, loan2: l2, loan3: l3, loan4: l4, loan5: l5
                     });
                 }
                 refresh();
             };
             r.readAsText(f);
         }
-        function resetSession() { if(confirm("Clear data?")) location.reload(); }
+        function resetSession() { if (confirm("Clear data?")) location.reload(); }
     </script>
 </body>
+
 </html>
