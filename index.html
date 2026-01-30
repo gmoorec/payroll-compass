@@ -612,7 +612,11 @@
                             onchange="refresh()">
                         <label class="text-[10px] text-slate-500 block mb-1">Last Dec GREP</label>
                         <input type="number" id="inpLastDecGrep"
-                            class="w-full text-right border rounded px-1 py-0.5 text-xs" placeholder="0.00"
+                            class="w-full text-right border rounded px-1 py-0.5 text-xs mb-2" placeholder="0.00"
+                            onchange="refresh()">
+                        <label class="text-[10px] text-slate-500 block mb-1">Total Pay Periods/Year</label>
+                        <input type="number" id="inpTotalPeriods" value="26"
+                            class="w-full text-right border rounded px-1 py-0.5 text-xs" placeholder="26"
                             onchange="refresh()">
                     </div>
 
@@ -643,12 +647,12 @@
                     <div class="flex flex-1 items-center">
                         <div class="w-1/2 pr-2 space-y-2">
                             <div>
-                                <div class="text-[9px] text-red-500 font-bold uppercase">Paid</div>
+                                <div class="text-[9px] text-red-500 font-bold uppercase">Retained</div>
                                 <div id="kpiSalPaidVal" class="text-xs font-bold">$0.00</div>
                                 <div id="kpiSalPaidRate" class="text-[9px] text-slate-400">0.00%</div>
                             </div>
                             <div>
-                                <div class="text-[9px] text-emerald-500 font-bold uppercase">Legal</div>
+                                <div class="text-[9px] text-emerald-500 font-bold uppercase">Projected</div>
                                 <div id="kpiSalLegVal" class="text-xs font-bold">$0.00</div>
                                 <div id="kpiSalLegRate" class="text-[9px] text-slate-400">0.00%</div>
                             </div>
@@ -665,12 +669,12 @@
                     <div class="flex flex-1 items-center">
                         <div class="w-1/2 pr-2 space-y-2">
                             <div>
-                                <div class="text-[9px] text-red-500 font-bold uppercase">Paid</div>
+                                <div class="text-[9px] text-red-500 font-bold uppercase">Retained</div>
                                 <div id="kpiGrepPaidVal" class="text-xs font-bold">$0.00</div>
                                 <div id="kpiGrepPaidRate" class="text-[9px] text-slate-400">0.00%</div>
                             </div>
                             <div>
-                                <div class="text-[9px] text-emerald-500 font-bold uppercase">Legal</div>
+                                <div class="text-[9px] text-emerald-500 font-bold uppercase">Projected</div>
                                 <div id="kpiGrepLegVal" class="text-xs font-bold">$0.00</div>
                                 <div id="kpiGrepLegRate" class="text-[9px] text-slate-400">0.00%</div>
                             </div>
@@ -1146,14 +1150,17 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3 class="font-bold text-slate-700 mb-2">Q: The ISR graph shows "Paid" above "Legal". What does
+                    <h3 class="font-bold text-slate-700 mb-2">Q: The ISR graph shows "Retained" vs "Projected". What
+                        does
                         this mean?</h3>
-                    <p class="text-sm text-slate-600 pl-4">A: The <strong>Red Line (Paid)</strong> shows what your
+                    <p class="text-sm text-slate-600 pl-4">A: The <strong>Red Line (Retained)</strong> shows what your
                         company has actually deducted from your paychecks so far. The <strong>Green Line
-                            (Legal)</strong> shows what the law says you owe based on your YTD income. If Paid is above
-                        Legal, you're "ahead" on taxes - the company has withheld more than required. This often happens
-                        when income is variable; the company withholds conservatively, and you may see lower deductions
-                        later or a refund during year-end reconciliation.</p>
+                            (Projected)</strong> shows what should be withheld based on an annualized projection of your
+                        year-end income. This projection method distributes the expected annual tax evenly across all
+                        pay periods, which is how most payroll departments actually operate. If Retained is above
+                        Projected, you're "ahead" on taxes - the company has withheld more than the annualized
+                        projection suggests. This smooths out your take-home pay throughout the year and prevents large
+                        fluctuations when bonuses or other variable income is received.</p>
                 </div>
 
                 <div class="mb-6">
@@ -1173,6 +1180,24 @@
                         dollars), double-check that you've entered all income components correctly (including toggling
                         GREP, bonuses, etc.). If it still doesn't match, consult with your HR department - they may have
                         additional context about special deductions or adjustments specific to your situation.</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-bold text-slate-700 mb-2">Q: What do the variance columns (VAR SS, VAR ISR, etc.)
+                        show?</h3>
+                    <p class="text-sm text-slate-600 pl-4">A: Variance columns show the <strong>cumulative running
+                            balance</strong> between what was
+                        actually <strong>retained</strong> (withheld from your paycheck YTD) versus what the
+                        <strong>projected</strong> smooth distribution suggests should have been withheld by this point.
+                        Red values
+                        indicate you've paid more than projected so far (over-withheld), while green values indicate
+                        you've
+                        paid less than projected so far (under-withheld). This cumulative approach shows "Am I ahead or
+                        behind overall?"
+                        rather than period-specific spikes, which is more useful for understanding your overall tax
+                        position.
+                        The variance converges to $0 by year-end when projections match actuals.
+                    </p>
                 </div>
 
                 <div class="mb-6">
@@ -1199,10 +1224,12 @@
         let chartSalInstance = null;
         let chartGrepInstance = null;
         let editingId = null;
+        let totalPayPeriods = 26; // Default to biweekly (26 periods/year)
 
         // === VERSION CONTROL ===
         // Update this single constant to change the version across the entire page
-        const VERSION = 'v0.35';
+        // Semantic versioning: MAJOR.MINOR.PATCH (0.4.0 = projection feature set, first stable release)
+        const VERSION = '0.4.0';
 
         const SALARY_IDS = ['inpBase', 'inpQBP', 'inpOT', 'inpVac', 'inpXIII', 'inpExtra'];
         const TAX_IDS = ['actSS', 'actSE', 'actISR', 'actISRGREP'];
@@ -1294,6 +1321,218 @@
             let t = 0; for (let i = brackets.length - 1; i >= 0; i--) { if (inc > brackets[i].t) { t += (inc - brackets[i].t) * brackets[i].r; inc = brackets[i].t; } } return t;
         }
 
+        // --- PROJECTION FUNCTIONS ---
+
+        /**
+         * Estimate XIII month payments based on salary windows and Panama XIII rules
+         * XIII calculation: (sum of base salary in window) / 12
+         * Windows: 
+         *   XIII.1: Dec 16 (prev year) → April 15 (9 biweekly periods)
+         *   XIII.2: April 16 → August 15 (9 biweekly periods)
+         *   XIII.3: August 16 → December 15 (8 biweekly periods)
+         * @param {Array} entries - Array of pay stub entries
+         * @param {number} lastDecSalary - Last year's December salary for XIII.1 calculation
+         * @returns {Object} Estimated XIII payments: { xiii1, xiii2, xiii3, total }
+         */
+        function estimateXIII(entries, lastDecSalary) {
+            // Get current year from entries
+            const currentYear = entries.length > 0 ? parseDate(entries[0].date).getFullYear() : new Date().getFullYear();
+
+            // Define XIII windows
+            const windows = {
+                xiii1: {
+                    start: new Date(currentYear - 1, 11, 16), // Dec 16 prev year
+                    end: new Date(currentYear, 3, 15),        // April 15
+                    periods: 9,
+                    salary: lastDecSalary || 0  // Start with last December if provided
+                },
+                xiii2: {
+                    start: new Date(currentYear, 3, 16),      // April 16
+                    end: new Date(currentYear, 7, 15),        // August 15
+                    periods: 9,
+                    salary: 0
+                },
+                xiii3: {
+                    start: new Date(currentYear, 7, 16),      // August 16
+                    end: new Date(currentYear, 11, 15),       // December 15
+                    periods: 8,
+                    salary: 0
+                }
+            };
+
+            // Collect unique dates with their XIII-eligible salary
+            const dateMap = new Map();
+            entries.forEach(e => {
+                const eDate = parseDate(e.date);
+                const xiiiSalary = e.base + e.ot + e.vac; // XIII base (excludes QBP, extra, XIII itself)
+
+                if (!dateMap.has(e.date)) {
+                    dateMap.set(e.date, { date: eDate, salary: 0 });
+                }
+                dateMap.get(e.date).salary += xiiiSalary;
+            });
+
+            // Process each entry and assign to windows
+            dateMap.forEach(({ date, salary }) => {
+                // Check which XIII window this date falls into
+                if (date >= windows.xiii1.start && date <= windows.xiii1.end) {
+                    windows.xiii1.salary += salary;
+                    windows.xiii1.periodsWithData = (windows.xiii1.periodsWithData || 0) + 1;
+                } else if (date >= windows.xiii2.start && date <= windows.xiii2.end) {
+                    windows.xiii2.salary += salary;
+                    windows.xiii2.periodsWithData = (windows.xiii2.periodsWithData || 0) + 1;
+                } else if (date >= windows.xiii3.start && date <= windows.xiii3.end) {
+                    windows.xiii3.salary += salary;
+                    windows.xiii3.periodsWithData = (windows.xiii3.periodsWithData || 0) + 1;
+                }
+            });
+
+            // Estimate XIII for each window
+            const estimates = { xiii1: 0, xiii2: 0, xiii3: 0, total: 0 };
+
+            // Check if actual XIII payments exist
+            const actualXIII1 = entries.filter(e => e.xiii > 0 && parseDate(e.date) >= windows.xiii1.start && parseDate(e.date) <= windows.xiii1.end).reduce((sum, e) => sum + e.xiii, 0);
+            const actualXIII2 = entries.filter(e => e.xiii > 0 && parseDate(e.date) >= windows.xiii2.start && parseDate(e.date) <= windows.xiii2.end).reduce((sum, e) => sum + e.xiii, 0);
+            const actualXIII3 = entries.filter(e => e.xiii > 0 && parseDate(e.date) >= windows.xiii3.start && parseDate(e.date) <= windows.xiii3.end).reduce((sum, e) => sum + e.xiii, 0);
+
+            // For each window, use actual if available, otherwise estimate
+            ['xiii1', 'xiii2', 'xiii3'].forEach(key => {
+                const window = windows[key];
+                const actualXIII = key === 'xiii1' ? actualXIII1 : key === 'xiii2' ? actualXIII2 : actualXIII3;
+
+                if (actualXIII > 0) {
+                    // Use actual XIII payment
+                    estimates[key] = actualXIII;
+                } else if (window.periodsWithData && window.periodsWithData > 0) {
+                    // Estimate based on data so far
+                    const avgSalaryPerPeriod = window.salary / window.periodsWithData;
+                    const projectedTotalSalary = avgSalaryPerPeriod * window.periods;
+                    estimates[key] = projectedTotalSalary / 12; // XIII formula
+                } else if (key !== 'xiii1' && estimates.xiii1 > 0) {
+                    // Use XIII.1 as baseline for future estimates (same pattern)
+                    estimates[key] = estimates.xiii1;
+                }
+            });
+
+            estimates.total = estimates.xiii1 + estimates.xiii2 + estimates.xiii3;
+            return estimates;
+        }
+
+        /**
+         * Project year-end income based on current YTD and periods elapsed
+         * @param {number} ytd - Year-to-date total
+         * @param {number} periodsSoFar - Number of pay periods entered so far
+         * @param {number} totalPeriods - Total pay periods in the year
+         * @returns {number} Projected year-end income
+         */
+        function projectYearEnd(ytd, periodsSoFar, totalPeriods) {
+            if (periodsSoFar === 0) return 0;
+            return (ytd / periodsSoFar) * totalPeriods;
+        }
+
+        /**
+         * Calculate projected taxes for all entries based on annualized methodology
+         * @param {Array} entries - Array of pay stub entries
+         * @param {number} totalPeriods - Total pay periods in the year
+         * @returns {Array} Array of projection objects for each entry
+         */
+        function calculateProjectedTaxes(entries, totalPeriods) {
+            const projections = [];
+            let ytdSalary = 0;       // Regular salary (excludes XIII)
+            let ytdXIII = 0;         // XIII tracked separately - not recurring
+            let ytdGREP = 0;
+            let ytdSSBase = 0; // For SS calculation (salary)
+            let ytdSSGrep = 0; // For SS calculation (GREP)
+            let ytdSEBase = 0;  // For SE calculation
+
+            // [NEW] Estimate XIII payments for the year
+            const xiiiEstimates = estimateXIII(entries, lastDecSal);
+
+            // [FIX] Track unique pay dates to count actual pay periods
+            const uniqueDates = new Set();
+
+            entries.forEach((e, index) => {
+                // [FIX] Count unique dates for actual pay periods
+                uniqueDates.add(e.date);
+                const periodsSoFar = uniqueDates.size;  // Use unique date count, not entry index
+
+                // Calculate components for this entry
+                // Tax base rules:
+                // - ISR: All salary (base+QBP+OT+vac+XIII+extra)
+                // - SS:  Base salary + XIII (excludes QBP)
+                // - SE:  Base salary only (excludes QBP, XIII)
+                const salGross = e.base + e.qbp + e.ot + e.vac + e.extra;
+                const seBase = e.base + e.ot + e.vac + e.extra; // SE excludes bonuses (QBP) and XIII
+                const ssBase = e.base + e.ot + e.vac + e.extra + e.xiii; // SS includes XIII but excludes QBP
+
+                // Update YTD values
+                ytdSalary += salGross;
+                ytdXIII += e.xiii;      // Track XIII separately for ISR projection
+                ytdGREP += e.grep;
+                ytdSSBase += ssBase;    // SS: base+OT+vac+extra+XIII
+                ytdSSGrep += e.grep;
+                ytdSEBase += seBase;    // SE: base+OT+vac+extra only
+
+                // Project year-end values (only project if we haven't exceeded total periods)
+                const projYearEndSalary = periodsSoFar <= totalPeriods ? projectYearEnd(ytdSalary, periodsSoFar, totalPeriods) : ytdSalary;
+                const projYearEndGREP = periodsSoFar <= totalPeriods ? projectYearEnd(ytdGREP, periodsSoFar, totalPeriods) : ytdGREP;
+                const projYearEndSSBase = periodsSoFar <= totalPeriods ? projectYearEnd(ytdSSBase, periodsSoFar, totalPeriods) : ytdSSBase;
+                const projYearEndSSGrep = periodsSoFar <= totalPeriods ? projectYearEnd(ytdSSGrep, periodsSoFar, totalPeriods) : ytdSSGrep;
+                const projYearEndSEBase = periodsSoFar <= totalPeriods ? projectYearEnd(ytdSEBase, periodsSoFar, totalPeriods) : ytdSEBase;
+
+                // Calculate projected annual taxes
+                // [NEW] Use ESTIMATED XIII total for smooth distribution, not just actual
+                // This distributes expected XIII tax burden evenly across the year
+                const estimatedXIIIForProjection = xiiiEstimates.total;
+                const projAnnualISR_SAL = getTax(projYearEndSalary + estimatedXIIIForProjection, RULES.ISR_SAL);
+                const projAnnualISR_GREP = getTax(projYearEndGREP, RULES.ISR_GREP);
+                const projAnnualSS = (projYearEndSSBase * RULES.SS) + (projYearEndSSGrep * RULES.SS_GREP);
+                const projAnnualSE = projYearEndSEBase * RULES.SE;
+
+                // Calculate target cumulative (what should have been withheld by this point)
+                // [FIX] Cap at totalPeriods to avoid over-projection
+                const effectivePeriods = Math.min(periodsSoFar, totalPeriods);
+                const targetCumulativeISR_SAL = (projAnnualISR_SAL * effectivePeriods) / totalPeriods;
+                const targetCumulativeISR_GREP = (projAnnualISR_GREP * effectivePeriods) / totalPeriods;
+                const targetCumulativeSS = (projAnnualSS * effectivePeriods) / totalPeriods;
+                const targetCumulativeSE = (projAnnualSE * effectivePeriods) / totalPeriods;
+
+                // Calculate projected tax for this specific period
+                const prevProj = index > 0 ? projections[index - 1] : { cumISR_SAL: 0, cumISR_GREP: 0, cumSS: 0, cumSE: 0 };
+                const projThisPeriodISR_SAL = targetCumulativeISR_SAL - prevProj.cumISR_SAL;
+                const projThisPeriodISR_GREP = targetCumulativeISR_GREP - prevProj.cumISR_GREP;
+                const projThisPeriodSS = targetCumulativeSS - prevProj.cumSS;
+                const projThisPeriodSE = targetCumulativeSE - prevProj.cumSE;
+
+                projections.push({
+                    // Projections for this period
+                    projISR_SAL: projThisPeriodISR_SAL,
+                    projISR_GREP: projThisPeriodISR_GREP,
+                    projSS: projThisPeriodSS,
+                    projSE: projThisPeriodSE,
+
+                    // Cumulative projections
+                    cumISR_SAL: targetCumulativeISR_SAL,
+                    cumISR_GREP: targetCumulativeISR_GREP,
+                    cumSS: targetCumulativeSS,
+                    cumSE: targetCumulativeSE,
+
+                    // Year-end projections (for tooltips)
+                    projYearEndSalary: projYearEndSalary + estimatedXIIIForProjection,  // Include estimated XIII for display
+                    projYearEndGREP: projYearEndGREP,
+                    projAnnualISR_SAL: projAnnualISR_SAL,
+                    projAnnualISR_GREP: projAnnualISR_GREP,
+
+                    // Metadata
+                    periodsSoFar: periodsSoFar,
+                    totalPeriods: totalPeriods
+                });
+            });
+
+            return projections;
+        }
+
+
         // --- ACTIONS ---
         function commit() {
             const val = id => { const el = document.getElementById(id); return (!el || el.closest('.hidden-row')) ? 0 : parseFloat(el.value || 0); };
@@ -1379,6 +1618,10 @@
         function refresh() {
             entries.sort((a, b) => parseDate(a.date) - parseDate(b.date));
             lastDecSal = parseFloat(document.getElementById('inpLastDecSal').value || 0); lastDecGrep = parseFloat(document.getElementById('inpLastDecGrep').value || 0);
+            totalPayPeriods = parseInt(document.getElementById('inpTotalPeriods').value || 26);
+
+            // Calculate projections for all entries
+            const projections = calculateProjectedTaxes(entries, totalPayPeriods);
 
             // Column Config
             const sums = { qbp: 0, ot: 0, vac: 0, xiii: 0, extra: 0, grep: 0, home: 0, l1: 0, l2: 0, l3: 0, l4: 0, l5: 0 };
@@ -1399,6 +1642,9 @@
                 ...(sums.grep > 0 ? [{ id: 'grep', lbl: 'GREP', cls: 'head-grep border-r-2' }] : []), ...(sums.home > 0 ? [{ id: 'home', lbl: 'Home', cls: 'head-home border-r-2' }] : []),
                 { id: 'ss', lbl: 'SS', cls: 'head-tax border-l-2' }, { id: 'se', lbl: 'SE', cls: 'head-tax' }, { id: 'isrS', lbl: 'ISR Sal', cls: 'head-tax' },
                 ...(sums.grep > 0 ? [{ id: 'isrG', lbl: 'ISR GREP', cls: 'head-tax' }] : []),
+                // Variance Columns
+                { id: 'varSS', lbl: 'VAR SS', cls: 'head-ded border-l-2' }, { id: 'varSE', lbl: 'VAR SE', cls: 'head-ded' }, { id: 'varISRS', lbl: 'VAR ISR Sal', cls: 'head-ded' },
+                ...(sums.grep > 0 ? [{ id: 'varISRG', lbl: 'VAR ISR GREP', cls: 'head-ded' }] : []),
                 // Deductions (Conditional)
                 { id: 'ins', lbl: 'Ins', cls: 'head-ded border-l-2' },
                 ...(sums.l1 > 0 ? [{ id: 'loan1', lbl: 'Loan 1', cls: 'head-ded' }] : []), ...(sums.l2 > 0 ? [{ id: 'loan2', lbl: 'Loan 2', cls: 'head-ded' }] : []),
@@ -1407,16 +1653,20 @@
                 // YTD
                 { id: 'ygross', lbl: 'YTD Gross', cls: 'head-ytd border-l-2 font-bold' }, ...(sums.grep > 0 ? [{ id: 'ygrep', lbl: 'YTD GREP', cls: 'head-ytd' }] : []),
                 { id: 'yss', lbl: 'YTD SS', cls: 'head-ytd border-l-2' }, { id: 'yse', lbl: 'YTD SE', cls: 'head-ytd' }, { id: 'yisrS', lbl: 'YTD ISR Sal', cls: 'head-ytd' },
-                ...(sums.grep > 0 ? [{ id: 'yisrG', lbl: 'YTD ISR GREP', cls: 'head-ytd' }] : []), { id: 'ynet', lbl: 'YTD Net', cls: 'head-ytd font-bold border-l-2' }
+                ...(sums.grep > 0 ? [{ id: 'yisrG', lbl: 'YTD ISR GREP', cls: 'head-ytd' }] : []),
+                // YTD Variance Columns
+                { id: 'yvarSS', lbl: 'YTD VAR SS', cls: 'head-ded border-l-2' }, { id: 'yvarSE', lbl: 'YTD VAR SE', cls: 'head-ded' }, { id: 'yvarISRS', lbl: 'YTD VAR ISR Sal', cls: 'head-ded' },
+                ...(sums.grep > 0 ? [{ id: 'yvarISRG', lbl: 'YTD VAR ISR GREP', cls: 'head-ded' }] : []),
+                { id: 'ynet', lbl: 'YTD Net', cls: 'head-ytd font-bold border-l-2' }
             ];
 
             const thead = document.querySelector('#mainTable thead'); thead.innerHTML = `<tr>${cols.map(c => `<th class="p-3 ${c.cls}">${c.lbl}</th>`).join('')}</tr>`;
 
-            let ytd = { grossSal: 0, grepTotal: 0, homeTotal: 0, net: 0, salBase: 0, grepBase: 0, actSS: 0, actSE: 0, actISR: 0, actISRG: 0, isrSalPaid: 0, isrGrepPaid: 0, seBase: 0, totalTax: 0, totalDed: 0 };
+            let ytd = { grossSal: 0, grepTotal: 0, homeTotal: 0, net: 0, salBase: 0, grepBase: 0, actSS: 0, actSE: 0, actISR: 0, actISRG: 0, isrSalPaid: 0, isrGrepPaid: 0, seBase: 0, totalTax: 0, totalDed: 0, varSS: 0, varSE: 0, varISRS: 0, varISRG: 0 };
             const chartData = { sal: { paid: [], leg: [], labels: [] }, grep: { paid: [], leg: [], labels: [] } };
             const tbody = document.querySelector('#mainTable tbody'); tbody.innerHTML = '';
 
-            entries.forEach(e => {
+            entries.forEach((e, index) => {
                 const salGross = e.base + e.qbp + e.ot + e.vac + e.xiii + e.extra;
                 const actTax = e.actSS + e.actSE + e.actISR + e.actISRGREP;
                 const loanSum = e.loan1 + e.loan2 + e.loan3 + e.loan4 + e.loan5;
@@ -1427,13 +1677,22 @@
                 ytd.actSS += e.actSS; ytd.actSE += e.actSE; ytd.actISR += e.actISR; ytd.actISRG += e.actISRGREP;
                 ytd.totalTax += actTax; ytd.totalDed += otherDed; ytd.isrSalPaid += e.actISR; ytd.isrGrepPaid += e.actISRGREP;
 
-                const legSalTaxTotal = getTax(ytd.salBase, RULES.ISR_SAL);
-                const legGrepTaxTotal = getTax(ytd.grepBase, RULES.ISR_GREP);
+                // Get projection data for this entry
+                const proj = projections[index] || { projSS: 0, projSE: 0, projISR_SAL: 0, projISR_GREP: 0, cumSS: 0, cumSE: 0, cumISR_SAL: 0, cumISR_GREP: 0, projYearEndSalary: 0, projYearEndGREP: 0, projAnnualISR_SAL: 0, projAnnualISR_GREP: 0 };
+
+                // [CHANGED] Calculate CUMULATIVE variance (YTD actual vs YTD projected)
+                // This shows "am I ahead or behind overall?" not "was this period high/low?"
+                const varSS = ytd.actSS - proj.cumSS;
+                const varSE = ytd.actSE - proj.cumSE;
+                const varISRS = ytd.actISR - proj.cumISR_SAL;
+                const varISRG = ytd.actISRG - proj.cumISR_GREP;
+
                 const net = (salGross + e.grep + e.home) - actTax - otherDed;
                 ytd.net += net;
 
-                chartData.sal.labels.push(''); chartData.sal.paid.push(ytd.isrSalPaid); chartData.sal.leg.push(legSalTaxTotal);
-                chartData.grep.labels.push(''); chartData.grep.paid.push(ytd.isrGrepPaid); chartData.grep.leg.push(legGrepTaxTotal);
+                // Use PROJECTED values for chart (not by-the-book)
+                chartData.sal.labels.push(''); chartData.sal.paid.push(ytd.isrSalPaid); chartData.sal.leg.push(proj.cumISR_SAL);
+                chartData.grep.labels.push(''); chartData.grep.paid.push(ytd.isrGrepPaid); chartData.grep.leg.push(proj.cumISR_GREP);
 
                 const isEditing = e.id === editingId;
                 const rowClass = isEditing ? 'editing-row border-b border-blue-300' : 'hover:bg-blue-50/30 transition border-b border-slate-50';
@@ -1470,8 +1729,35 @@
                         css += ' border-l-2 border-orange-100';
                     }
                     else if (c.id === 'se') { val = `<span class="cell-val">$${fmt(e.actSE)}</span><span class="cell-pct">${pct(e.actSE, e.base + e.ot + e.vac + e.extra)}</span>`; }
-                    else if (c.id === 'isrS') { val = `<span class="cell-val">$${fmt(e.actISR)}</span><span class="cell-pct">${pct(e.actISR, salGross)}</span>`; }
-                    else if (c.id === 'isrG') { val = `<span class="cell-val">$${fmt(e.actISRGREP)}</span><span class="cell-pct">${pct(e.actISRGREP, e.grep)}</span>`; }
+                    // [NEW] ISR Sal with projection tooltip
+                    else if (c.id === 'isrS') {
+                        const tooltip = `Proj. Yearly Sal: $${fmt(proj.projYearEndSalary)}, Proj. ISR SAL Tax: $${fmt(proj.projAnnualISR_SAL)}, Proj. Rate: ${pct(proj.projAnnualISR_SAL, proj.projYearEndSalary)}`;
+                        val = `<span class="cell-val ledger-tooltip underline decoration-dashed decoration-slate-400" data-tooltip="${tooltip}">$${fmt(e.actISR)}</span><span class="cell-pct">${pct(e.actISR, salGross)}</span>`;
+                    }
+                    // [NEW] ISR GREP with projection tooltip
+                    else if (c.id === 'isrG') {
+                        const tooltip = `Proj. Yearly GREP: $${fmt(proj.projYearEndGREP)}, Proj. ISR GREP Tax: $${fmt(proj.projAnnualISR_GREP)}, Proj. Rate: ${pct(proj.projAnnualISR_GREP, proj.projYearEndGREP)}`;
+                        val = `<span class="cell-val ledger-tooltip underline decoration-dashed decoration-slate-400" data-tooltip="${tooltip}">$${fmt(e.actISRGREP)}</span><span class="cell-pct">${pct(e.actISRGREP, e.grep)}</span>`;
+                    }
+                    // [NEW] Variance columns
+                    else if (c.id === 'varSS') {
+                        const varColor = varSS >= 0 ? 'text-red-600' : 'text-emerald-600';
+                        const varSign = varSS >= 0 ? '' : '';
+                        val = `<span class="cell-val ${varColor}">${varSign}$${fmt(Math.abs(varSS))}</span><span class="cell-pct">${pct(Math.abs(varSS), proj.projSS || 1)}</span>`;
+                        css += ' border-l-2 border-red-100';
+                    }
+                    else if (c.id === 'varSE') {
+                        const varColor = varSE >= 0 ? 'text-red-600' : 'text-emerald-600';
+                        val = `<span class="cell-val ${varColor}">$${fmt(Math.abs(varSE))}</span><span class="cell-pct">${pct(Math.abs(varSE), proj.projSE || 1)}</span>`;
+                    }
+                    else if (c.id === 'varISRS') {
+                        const varColor = varISRS >= 0 ? 'text-red-600' : 'text-emerald-600';
+                        val = `<span class="cell-val ${varColor}">$${fmt(Math.abs(varISRS))}</span><span class="cell-pct">${pct(Math.abs(varISRS), proj.projISR_SAL || 1)}</span>`;
+                    }
+                    else if (c.id === 'varISRG') {
+                        const varColor = varISRG >= 0 ? 'text-red-600' : 'text-emerald-600';
+                        val = `<span class="cell-val ${varColor}">$${fmt(Math.abs(varISRG))}</span><span class="cell-pct">${pct(Math.abs(varISRG), proj.projISR_GREP || 1)}</span>`;
+                    }
                     else if (['ins', 'loan1', 'loan2', 'loan3', 'loan4', 'loan5'].includes(c.id)) { if (e[c.id] > 0) val = '$' + fmt(e[c.id]); css += ' text-red-800'; }
                     else if (c.id === 'ygross') { val = '$' + fmt(ytd.grossSal); css += ' font-bold text-slate-600 border-l-2 border-slate-200'; }
                     else if (c.id === 'ygrep') { val = '$' + fmt(ytd.grepTotal); css += ' text-slate-500'; }
@@ -1495,6 +1781,25 @@
                     else if (c.id === 'yse') { val = `<span class="cell-val">$${fmt(ytd.actSE)}</span><span class="cell-pct">${pct(ytd.actSE, ytd.seBase)}</span>`; }
                     else if (c.id === 'yisrS') { val = `<span class="cell-val">$${fmt(ytd.actISR)}</span><span class="cell-pct">${pct(ytd.actISR, ytd.salBase)}</span>`; }
                     else if (c.id === 'yisrG') { val = `<span class="cell-val">$${fmt(ytd.actISRG)}</span><span class="cell-pct">${pct(ytd.actISRG, ytd.grepBase)}</span>`; }
+                    // [NEW] YTD Variance columns
+                    // [UPDATED] YTD variance columns (now same as per-period since variance is cumulative)
+                    else if (c.id === 'yvarSS') {
+                        const varColor = varSS >= 0 ? 'text-red-600' : 'text-emerald-600';
+                        val = `<span class="cell-val ${varColor}">$${fmt(Math.abs(varSS))}</span><span class="cell-pct">${pct(Math.abs(varSS), proj.cumSS || 1)}</span>`;
+                        css += ' border-l-2 border-red-100';
+                    }
+                    else if (c.id === 'yvarSE') {
+                        const varColor = varSE >= 0 ? 'text-red-600' : 'text-emerald-600';
+                        val = `<span class="cell-val ${varColor}">$${fmt(Math.abs(varSE))}</span><span class="cell-pct">${pct(Math.abs(varSE), proj.cumSE || 1)}</span>`;
+                    }
+                    else if (c.id === 'yvarISRS') {
+                        const varColor = varISRS >= 0 ? 'text-red-600' : 'text-emerald-600';
+                        val = `<span class="cell-val ${varColor}">$${fmt(Math.abs(varISRS))}</span><span class="cell-pct">${pct(Math.abs(varISRS), proj.cumISR_SAL || 1)}</span>`;
+                    }
+                    else if (c.id === 'yvarISRG') {
+                        const varColor = varISRG >= 0 ? 'text-red-600' : 'text-emerald-600';
+                        val = `<span class="cell-val ${varColor}">$${fmt(Math.abs(varISRG))}</span><span class="cell-pct">${pct(Math.abs(varISRG), proj.cumISR_GREP || 1)}</span>`;
+                    }
                     else if (c.id === 'ynet') { val = '$' + fmt(ytd.net); css += ' font-bold text-emerald-600 border-l-2 border-slate-200'; }
                     tr += `<td class="${css}">${val}</td>`;
                 });
@@ -1543,10 +1848,12 @@
                 document.getElementById('kpiDedTable').innerHTML = dedHtml;
             } else { cardDed.classList.add('opacity-25', 'pointer-events-none'); document.getElementById('kpiDedTable').innerHTML = `<tr><td class="py-2 font-bold text-slate-500">Total</td><td class="py-2 text-right font-bold text-orange-600">$0.00</td></tr>`; }
 
-            const legSalTax = getTax(ytd.salBase, RULES.ISR_SAL); document.getElementById('kpiSalPaidVal').innerText = '$' + fmt(ytd.isrSalPaid); document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase); document.getElementById('kpiSalLegVal').innerText = '$' + fmt(legSalTax); document.getElementById('kpiSalLegRate').innerText = pct(legSalTax, ytd.salBase);
+            // Use PROJECTED values for KPI cards (not by-the-book)
+            const lastProj = projections.length > 0 ? projections[projections.length - 1] : { cumISR_SAL: 0, cumISR_GREP: 0 };
+            document.getElementById('kpiSalPaidVal').innerText = '$' + fmt(ytd.isrSalPaid); document.getElementById('kpiSalPaidRate').innerText = pct(ytd.isrSalPaid, ytd.salBase); document.getElementById('kpiSalLegVal').innerText = '$' + fmt(lastProj.cumISR_SAL); document.getElementById('kpiSalLegRate').innerText = pct(lastProj.cumISR_SAL, ytd.salBase);
             chartSalInstance = updateMicroChart('chartSal', chartSalInstance, chartData.sal.paid, chartData.sal.leg);
 
-            const legGrepTax = getTax(ytd.grepBase, RULES.ISR_GREP); document.getElementById('kpiGrepPaidVal').innerText = '$' + fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$' + fmt(legGrepTax); document.getElementById('kpiGrepLegRate').innerText = pct(legGrepTax, ytd.grepBase);
+            document.getElementById('kpiGrepPaidVal').innerText = '$' + fmt(ytd.isrGrepPaid); document.getElementById('kpiGrepPaidRate').innerText = pct(ytd.isrGrepPaid, ytd.grepBase); document.getElementById('kpiGrepLegVal').innerText = '$' + fmt(lastProj.cumISR_GREP); document.getElementById('kpiGrepLegRate').innerText = pct(lastProj.cumISR_GREP, ytd.grepBase);
             chartGrepInstance = updateMicroChart('chartGrep', chartGrepInstance, chartData.grep.paid, chartData.grep.leg);
 
             if (!hasGrep) document.getElementById('cardGrep').classList.add('opacity-50'); else document.getElementById('cardGrep').classList.remove('opacity-50');
