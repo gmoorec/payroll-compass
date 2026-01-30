@@ -662,12 +662,33 @@
                 <div class="bg-white rounded-lg shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
                     <div class="p-3 bg-white border-b flex justify-between items-center shrink-0">
                         <h3 class="font-bold text-xs text-slate-700 uppercase">Granular Ledger</h3>
-                        <button onclick="toggleVarianceColumns()"
-                            class="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 transition-colors flex items-center gap-1"
-                            title="Show/hide variance columns">
-                            <span>📊</span>
-                            <span id="varianceToggleText">Show Variance</span>
-                        </button>
+                        <div class="flex gap-1 flex-wrap">
+                            <button onclick="toggleColumnGroup('income')"
+                                class="text-[10px] px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors"
+                                title="Toggle income columns">
+                                📥 <span id="group-toggle-income">▼</span>
+                            </button>
+                            <button onclick="toggleColumnGroup('taxes')"
+                                class="text-[10px] px-1.5 py-0.5 bg-red-50 hover:bg-red-100 rounded border border-red-200 transition-colors"
+                                title="Toggle tax columns">
+                                💰 <span id="group-toggle-taxes">▼</span>
+                            </button>
+                            <button onclick="toggleColumnGroup('deductions')"
+                                class="text-[10px] px-1.5 py-0.5 bg-orange-50 hover:bg-orange-100 rounded border border-orange-200 transition-colors"
+                                title="Toggle deduction columns">
+                                📉 <span id="group-toggle-deductions">▶</span>
+                            </button>
+                            <button onclick="toggleColumnGroup('ytd')"
+                                class="text-[10px] px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 transition-colors"
+                                title="Toggle YTD columns">
+                                📈 <span id="group-toggle-ytd">▼</span>
+                            </button>
+                            <button onclick="toggleColumnGroup('variance')"
+                                class="text-[10px] px-1.5 py-0.5 bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 transition-colors"
+                                title="Toggle variance columns">
+                                📊 <span id="group-toggle-variance">▶</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="flex-1 overflow-auto custom-scroll relative">
@@ -1206,7 +1227,7 @@
         // === VERSION CONTROL ===
         // Update this single constant to change the version across the entire page
         // Semantic versioning: MAJOR.MINOR.PATCH (0.4.0 = projection feature set, first stable release)
-        const VERSION = '0.4.2';
+        const VERSION = '0.5.0';
 
         const SALARY_IDS = ['inpBase', 'inpQBP', 'inpOT', 'inpVac', 'inpXIII', 'inpExtra'];
         const TAX_IDS = ['actSS', 'actSE', 'actISR', 'actISRGREP'];
@@ -1690,10 +1711,30 @@
 
         // Apply variance visibility on page load (default: hidden)
         window.addEventListener('DOMContentLoaded', () => {
+            // Apply variance column state
             const varianceVisible = localStorage.getItem('payroll-compass-variance-visible') === 'true';
             if (!varianceVisible) {
                 setTimeout(toggleVarianceColumns, 100); // Apply after table is rendered
             }
+
+            // Apply column group states
+            setTimeout(() => {
+                const groupStates = JSON.parse(localStorage.getItem('payroll-compass-column-groups') || '{"income":true,"taxes":true,"deductions":false,"ytd":true,"variance":false}');
+                Object.keys(groupStates).forEach(groupId => {
+                    if (!groupStates[groupId]) {
+                        // Hide collapsed groups
+                        const groupCols = COLUMN_GROUPS[groupId].cols;
+                        groupCols.forEach(colId => {
+                            document.querySelectorAll(`[data-col="${colId}"]`).forEach(el => {
+                                el.style.display = 'none';
+                            });
+                        });
+                    }
+                    // Update toggle icons
+                    const toggleIcon = document.getElementById(`group-toggle-${groupId}`);
+                    if (toggleIcon) toggleIcon.textContent = groupStates[groupId] ? '▼' : '▶';
+                });
+            }, 150);
         });
 
         // --- REFRESH LOGIC ---
@@ -1783,7 +1824,15 @@
                 cols.forEach(c => {
                     let val = '-'; let css = `p-3 ${c.cls} bg-transparent`;
                     if (c.id === 'act') val = `<div class="flex space-x-1"><button onclick="editEntry(${e.id})" class="text-blue-400 hover:text-blue-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button><button onclick="deleteEntry(${e.id})" class="text-red-300 hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>`;
-                    else if (c.id === 'date') { val = e.date; css += ' font-medium text-slate-700'; }
+                    else if (c.id === 'date') {
+                        // Payment type icon
+                        let icon = '💼'; // default regular salary
+                        if (e.xiii > 0) icon = '📅'; // XIII month
+                        else if (e.qbp > 0) icon = '🎁'; // QBP/Bonus
+                        else if (e.extra > 0) icon = '🏠'; // Extra allowance
+                        val = `${icon} ${e.date}`;
+                        css += ' font-medium text-slate-700';
+                    }
                     else if (['base', 'qbp', 'ot', 'vac', 'xiii', 'extra'].includes(c.id)) { if (e[c.id] > 0) val = '$' + fmt(e[c.id]); css += ' text-slate-500'; }
                     else if (c.id === 'gross') { val = '$' + fmt(salGross); css += ' font-bold text-blue-700 border-l-2 border-r-2 border-slate-100'; }
                     else if (c.id === 'grep') { if (e.grep > 0) val = '$' + fmt(e.grep); css += ' text-purple-700 border-r-2'; }
@@ -1981,7 +2030,35 @@
             });
         }
 
-        function exportCSV() {
+        // --- COLUMN GROUPS ---
+        const COLUMN_GROUPS = {
+            income: { id: 'income', label: '📥 Income', cols: ['base', 'qbp', 'ot', 'vac', 'xiii', 'extra', 'gross', 'grep', 'home'] },
+            taxes: { id: 'taxes', label: '💰 Taxes', cols: ['ss', 'se', 'isrS', 'isrG'] },
+            deductions: { id: 'deductions', label: '📉 Deductions', cols: ['ins', 'loan1', 'loan2', 'loan3', 'loan4', 'loan5'] },
+            ytd: { id: 'ytd', label: '📈 YTD', cols: ['ygross', 'ygrep', 'yss', 'yse', 'yisrS', 'yisrG', 'ynet'] },
+            variance: { id: 'variance', label: '📊 Variance', cols: ['varSS', 'varSE', 'varISRS', 'varISRG', 'yvarSS', 'yvarSE', 'yvarISRS', 'yvarISRG'] }
+        };
+
+        function toggleColumnGroup(groupId) {
+            const groupStates = JSON.parse(localStorage.getItem('payroll-compass-column-groups') || '{"income":true,"taxes":true,"deductions":false,"ytd":true,"variance":false}');
+            const newState = !groupStates[groupId];
+            groupStates[groupId] = newState;
+            localStorage.setItem('payroll-compass-column-groups', JSON.stringify(groupStates));
+
+            // Toggle all columns in this group
+            const groupCols = COLUMN_GROUPS[groupId].cols;
+            groupCols.forEach(colId => {
+                document.querySelectorAll(`[data-col="${colId}"]`).forEach(el => {
+                    el.style.display = newState ? '' : 'none';
+                });
+            });
+
+            // Update toggle icon
+            const toggleIcon = document.getElementById(`group-toggle-${groupId}`);
+            if (toggleIcon) toggleIcon.textContent = newState ? '▼' : '▶';
+        }
+
+        function refresh() {
             if (!entries.length && lastDecSal === 0 && lastDecGrep === 0) return alert("No Data");
             const h = ['ID', 'Date', 'Base', 'QBP', 'OT', 'Vac', 'XIII', 'Extra', 'GREP', 'Home', 'SS', 'SE', 'ISR_S', 'ISR_G', 'Ins', 'Loan1', 'Loan2', 'Loan3', 'Loan4', 'Loan5'];
             const r = entries.map(e => {
