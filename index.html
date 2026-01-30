@@ -606,14 +606,18 @@
 
                     <div id="xiiiConfig"
                         class="hidden-row absolute top-8 left-2 right-2 bg-white border border-slate-200 shadow-md p-2 rounded z-10">
-                        <label class="text-[10px] text-slate-500 block mb-1">Last Dec Gross (Salary Only)</label>
+                        <label class="text-[10px] text-slate-500 block mb-1"
+                            title="Enter your last December payment (Base+OT+VAC). We'll auto-detect if you had 1 or 2 December payments based on your January schedule.">Last
+                            Dec Gross (last payment)* ℹ️</label>
                         <input type="number" id="inpLastDecSal"
                             class="w-full text-right border rounded px-1 py-0.5 text-xs mb-2" placeholder="0.00"
-                            onchange="refresh()">
-                        <label class="text-[10px] text-slate-500 block mb-1">Last Dec GREP</label>
+                            onchange="refresh()" title="Enter your last December salary payment">
+                        <label class="text-[10px] text-slate-500 block mb-1"
+                            title="Enter your last December GREP payment. We'll auto-detect if you had 1 or 2 December payments based on your January schedule.">Last
+                            Dec GREP (last payment)* ℹ️</label>
                         <input type="number" id="inpLastDecGrep"
                             class="w-full text-right border rounded px-1 py-0.5 text-xs mb-2" placeholder="0.00"
-                            onchange="refresh()">
+                            onchange="refresh()" title="Enter your last December GREP payment">
                         <label class="text-[10px] text-slate-500 block mb-1">Total Pay Periods/Year</label>
                         <input type="number" id="inpTotalPeriods" value="26"
                             class="w-full text-right border rounded px-1 py-0.5 text-xs" placeholder="26"
@@ -691,6 +695,12 @@
                 <div class="bg-white rounded-lg shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
                     <div class="p-3 bg-white border-b flex justify-between items-center shrink-0">
                         <h3 class="font-bold text-xs text-slate-700 uppercase">Granular Ledger</h3>
+                        <button onclick="toggleVarianceColumns()"
+                            class="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 transition-colors flex items-center gap-1"
+                            title="Show/hide variance columns">
+                            <span>📊</span>
+                            <span id="varianceToggleText">Hide Variance</span>
+                        </button>
                     </div>
 
                     <div class="flex-1 overflow-auto custom-scroll relative">
@@ -1229,7 +1239,7 @@
         // === VERSION CONTROL ===
         // Update this single constant to change the version across the entire page
         // Semantic versioning: MAJOR.MINOR.PATCH (0.4.0 = projection feature set, first stable release)
-        const VERSION = '0.4.0';
+        const VERSION = '0.4.2';
 
         const SALARY_IDS = ['inpBase', 'inpQBP', 'inpOT', 'inpVac', 'inpXIII', 'inpExtra'];
         const TAX_IDS = ['actSS', 'actSE', 'actISR', 'actISRGREP'];
@@ -1659,6 +1669,46 @@
             }
         }
 
+        // --- VARIANCE COLUMN TOGGLE ---
+        function toggleVarianceColumns() {
+            // Get current state from localStorage (default: visible)
+            const currentState = localStorage.getItem('payroll-compass-variance-visible') !== 'false';
+            const newState = !currentState;
+
+            // Save new state
+            localStorage.setItem('payroll-compass-variance-visible', newState);
+
+            // Toggle all variance columns (both header and data cells)
+            const varCols = ['varSS', 'varSE', 'varISRS', 'varISRG', 'yvarSS', 'yvarSE', 'yvarISRS', 'yvarISRG'];
+            varCols.forEach(colId => {
+                // Toggle header cells
+                const headerCells = document.querySelectorAll(`th[data-col="${colId}"]`);
+                headerCells.forEach(cell => {
+                    cell.style.display = newState ? '' : 'none';
+                });
+
+                // Toggle data cells
+                const dataCells = document.querySelectorAll(`td[data-col="${colId}"]`);
+                dataCells.forEach(cell => {
+                    cell.style.display = newState ? '' : 'none';
+                });
+            });
+
+            // Update button text
+            const toggleText = document.getElementById('varianceToggleText');
+            if (toggleText) {
+                toggleText.textContent = newState ? 'Hide Variance' : 'Show Variance';
+            }
+        }
+
+        // Apply variance visibility on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const varianceVisible = localStorage.getItem('payroll-compass-variance-visible') !== 'false';
+            if (!varianceVisible) {
+                setTimeout(toggleVarianceColumns, 100); // Apply after table is rendered
+            }
+        });
+
         // --- REFRESH LOGIC ---
         function refresh() {
             entries.sort((a, b) => parseDate(a.date) - parseDate(b.date));
@@ -1705,7 +1755,7 @@
                 { id: 'ynet', lbl: 'YTD Net', cls: 'head-ytd font-bold border-l-2' }
             ];
 
-            const thead = document.querySelector('#mainTable thead'); thead.innerHTML = `<tr>${cols.map(c => `<th class="p-3 ${c.cls}">${c.lbl}</th>`).join('')}</tr>`;
+            const thead = document.querySelector('#mainTable thead'); thead.innerHTML = `<tr>${cols.map(c => `<th class="p-3 ${c.cls}" data-col="${c.id}">${c.lbl}</th>`).join('')}</tr>`;
 
             let ytd = { grossSal: 0, grepTotal: 0, homeTotal: 0, net: 0, salBase: 0, grepBase: 0, actSS: 0, actSE: 0, actISR: 0, actISRG: 0, isrSalPaid: 0, isrGrepPaid: 0, seBase: 0, totalTax: 0, totalDed: 0, varSS: 0, varSE: 0, varISRS: 0, varISRG: 0 };
             const chartData = { sal: { paid: [], leg: [], labels: [] }, grep: { paid: [], leg: [], labels: [] } };
@@ -1846,7 +1896,7 @@
                         val = `<span class="cell-val ${varColor}">$${fmt(Math.abs(varISRG))}</span><span class="cell-pct">${pct(Math.abs(varISRG), proj.cumISR_GREP || 1)}</span>`;
                     }
                     else if (c.id === 'ynet') { val = '$' + fmt(ytd.net); css += ' font-bold text-emerald-600 border-l-2 border-slate-200'; }
-                    tr += `<td class="${css}">${val}</td>`;
+                    tr += `<td class="${css}" data-col="${c.id}">${val}</td>`;
                 });
                 tr += '</tr>'; tbody.insertAdjacentHTML('beforeend', tr);
             });
