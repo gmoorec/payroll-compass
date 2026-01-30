@@ -208,10 +208,9 @@
         .info-icon::after {
             content: attr(data-tooltip);
             position: absolute;
-            left: 0;
-            top: auto;
-            bottom: calc(100% + 10px);
-            transform: none;
+            left: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%);
             background-color: #1e293b;
             color: white;
             padding: 8px 12px;
@@ -235,12 +234,11 @@
         .info-icon::before {
             content: '';
             position: absolute;
-            left: 20px;
-            top: auto;
-            bottom: calc(100% + 5px);
-            transform: none;
+            left: calc(100% + 5px);
+            top: 50%;
+            transform: translateY(-50%);
             border: 5px solid transparent;
-            border-top-color: #1e293b;
+            border-right-color: #1e293b;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
