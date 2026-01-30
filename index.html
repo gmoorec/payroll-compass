@@ -520,6 +520,12 @@
                     <button id="btnCancel" onclick="cancelEdit()"
                         class="hidden-row flex-none bg-red-100 text-red-600 font-bold py-3 px-4 rounded shadow hover:bg-red-200 transition mt-4">Cancel</button>
                 </div>
+
+                <!-- Quick Fill Calendar Button -->
+                <button id="btnQuickFill" onclick="quickFillCalendar()" style="display: none;"
+                    class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold py-3 rounded shadow hover:from-purple-600 hover:to-indigo-700 transition mt-3 text-sm">
+                    🚀 Quick Fill Year
+                </button>
             </div>
         </div>
 
@@ -1979,6 +1985,12 @@
 
             // Apply column group states after rendering
             applyColumnGroupStates();
+
+            // Show/hide Quick Fill button
+            const quickFillBtn = document.getElementById('btnQuickFill');
+            if (quickFillBtn) {
+                quickFillBtn.style.display = entries.length >= 1 ? 'block' : 'none';
+            }
         }
 
         function parseDate(dateStr) { if (!dateStr) return new Date(); if (dateStr.includes('/')) { const [m, d, y] = dateStr.split('/').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } else if (dateStr.includes('-')) { const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } return new Date(dateStr); }
@@ -2085,18 +2097,24 @@
             // CHECK FOR DATA COLLISION
             if (entries.length > 0) {
                 const message = `⚠️ You have ${entries.length} entries in the ledger.\n\n` +
-                    `Choose how to import:\n` +
-                    `• OK = Replace All (clear existing)\n` +
-                    `• Cancel = Merge (keep existing + add new)`;
+                    `Choose import option:\n` +
+                    `  1 = Replace All (clear existing)\n` +
+                    `  2 = Merge (keep existing + add new)\n` +
+                    `  3 = Cancel (abort import)`;
 
-                const userChoice = confirm(message);
+                const choice = prompt(message, "3");
 
-                if (userChoice) {
+                if (choice === "1") {
                     // Replace: Clear existing data
                     entries = [];
                     nextId = 1;
+                } else if (choice === "2") {
+                    // Merge: keep existing entries
+                } else {
+                    // Cancel (or any other input): abort import
+                    inp.value = ''; // Reset file input
+                    return;
                 }
-                // Else: Merge (keep existing entries)
             }
 
             const r = new FileReader();
@@ -2131,6 +2149,98 @@
             };
             r.readAsText(f);
         }
+
+        // QUICK FILL CALENDAR
+        function quickFillCalendar() {
+            const sortedEntries = entries.slice().sort((a, b) => parseDate(a.date) - parseDate(b.date));
+
+            if (sortedEntries.length === 0) {
+                alert("No entries found. Add at least one pay stub first.");
+                return;
+            }
+
+            let payFrequency = 14;
+
+            if (sortedEntries.length === 1) {
+                const freqChoice = prompt(
+                    "🗓 How often do you get paid?\n\n" +
+                    "  1 = Weekly (every 7 days)\n" +
+                    "  2 = Bi-Weekly (every 14 days) [DEFAULT]\n" +
+                    "  3 = Semi-Monthly (15th & 30th)",
+                    "2"
+                );
+
+                if (freqChoice === "1") payFrequency = 7;
+                else if (freqChoice === "3") return quickFillSemiMonthly(sortedEntries[0]);
+                else payFrequency = 14;
+            } else {
+                const daysDiff = (parseDate(sortedEntries[1].date) - parseDate(sortedEntries[0].date)) / (1000 * 60 * 60 * 24);
+                payFrequency = Math.round(daysDiff);
+            }
+
+            const template = sortedEntries[0];
+            const year = parseDate(template.date).getFullYear();
+            let lastDate = parseDate(sortedEntries[sortedEntries.length - 1].date);
+            const newEntries = [];
+            let count = 0;
+
+            while (count < 30 && lastDate.getFullYear() === year) {
+                lastDate = new Date(lastDate.getTime() + payFrequency * 24 * 60 * 60 * 1000);
+                if (lastDate.getFullYear() > year) break;
+
+                const month = lastDate.getMonth();
+                const day = lastDate.getDate();
+                const xiiiAmt = [3, 7, 11].includes(month) && Math.abs(day - 15) <= 5 ? template.base / 12 : 0;
+
+                newEntries.push({
+                    id: nextId++,
+                    date: ((lastDate.getMonth() + 1) + '/' + lastDate.getDate() + '/' + lastDate.getFullYear()),
+                    base: template.base, grep: template.grep, qbp: 0, ot: 0, vac: 0, xiii: xiiiAmt, extra: 0,
+                    home: template.home || 0, actSS: template.actSS, actSE: template.actSE,
+                    actISR: template.actISR, actISRGREP: template.actISRGREP, ins: template.ins || 0,
+                    loan1: 0, loan2: 0, loan3: 0, loan4: 0, loan5: 0
+                });
+                count++;
+            }
+
+            if (confirm(`🚀 Add ${newEntries.length} entries? (Every ${payFrequency} days, XIII in Apr/Aug/Dec)`)) {
+                entries.push(...newEntries);
+                refresh();
+                alert(`✅ Added ${newEntries.length} entries!`);
+            }
+        }
+
+        function quickFillSemiMonthly(template) {
+            const year = parseDate(template.date).getFullYear();
+            const newEntries = [];
+
+            for (let month = 0; month < 12; month++) {
+                const date15 = new Date(year, month, 15);
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                const date30 = new Date(year, month, Math.min(30, lastDay));
+
+                [date15, date30].forEach(d => {
+                    if (d.getTime() !== parseDate(template.date).getTime()) {
+                        const xiiiAmt = [3, 7, 11].includes(month) && d.getDate() === 15 ? template.base / 12 : 0;
+                        newEntries.push({
+                            id: nextId++,
+                            date: ((d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear()),
+                            base: template.base, grep: template.grep, qbp: 0, ot: 0, vac: 0, xiii: xiiiAmt, extra: 0,
+                            home: template.home || 0, actSS: template.actSS, actSE: template.actSE,
+                            actISR: template.actISR, actISRGREP: template.actISRGREP, ins: template.ins || 0,
+                            loan1: 0, loan2: 0, loan3: 0, loan4: 0, loan5: 0
+                        });
+                    }
+                });
+            }
+
+            if (confirm(`Add ${newEntries.length} semi-monthly entries?`)) {
+                entries.push(...newEntries);
+                refresh();
+                alert(`✅ Added ${newEntries.length} entries!`);
+            }
+        }
+
         function resetSession() { if (confirm("Clear data?")) location.reload(); }
     </script>
 </body>
