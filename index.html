@@ -1709,14 +1709,8 @@
             }
         }
 
-        // Apply variance visibility on page load (default: hidden)
+        // Apply column group states on page load
         window.addEventListener('DOMContentLoaded', () => {
-            // Apply variance column state
-            const varianceVisible = localStorage.getItem('payroll-compass-variance-visible') === 'true';
-            if (!varianceVisible) {
-                setTimeout(toggleVarianceColumns, 100); // Apply after table is rendered
-            }
-
             // Apply column group states
             setTimeout(() => {
                 applyColumnGroupStates();
