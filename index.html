@@ -1719,22 +1719,8 @@
 
             // Apply column group states
             setTimeout(() => {
-                const groupStates = JSON.parse(localStorage.getItem('payroll-compass-column-groups') || '{"income":true,"taxes":true,"deductions":false,"ytd":true,"variance":false}');
-                Object.keys(groupStates).forEach(groupId => {
-                    if (!groupStates[groupId]) {
-                        // Hide collapsed groups
-                        const groupCols = COLUMN_GROUPS[groupId].cols;
-                        groupCols.forEach(colId => {
-                            document.querySelectorAll(`[data-col="${colId}"]`).forEach(el => {
-                                el.style.display = 'none';
-                            });
-                        });
-                    }
-                    // Update toggle icons
-                    const toggleIcon = document.getElementById(`group-toggle-${groupId}`);
-                    if (toggleIcon) toggleIcon.textContent = groupStates[groupId] ? '▼' : '▶';
-                });
-            }, 150);
+                applyColumnGroupStates();
+            }, 300); // Timeout to ensure table is rendered
         });
 
         // --- REFRESH LOGIC ---
@@ -1996,6 +1982,9 @@
                     if (chartGrepInstance) { const ae = [{ datasetIndex: 0, index: sortIdx }, { datasetIndex: 1, index: sortIdx }]; chartGrepInstance.setActiveElements(ae); chartGrepInstance.tooltip.setActiveElements(ae); chartGrepInstance.update(); }
                 }
             }
+
+            // Apply column group states after rendering
+            applyColumnGroupStates();
         }
 
         function parseDate(dateStr) { if (!dateStr) return new Date(); if (dateStr.includes('/')) { const [m, d, y] = dateStr.split('/').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } else if (dateStr.includes('-')) { const [y, m, d] = dateStr.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0); } return new Date(dateStr); }
@@ -2056,6 +2045,29 @@
             // Update toggle icon
             const toggleIcon = document.getElementById(`group-toggle-${groupId}`);
             if (toggleIcon) toggleIcon.textContent = newState ? '▼' : '▶';
+        }
+
+        function applyColumnGroupStates() {
+            // Initialize localStorage with defaults if not set
+            if (!localStorage.getItem('payroll-compass-column-groups')) {
+                localStorage.setItem('payroll-compass-column-groups', '{"income":true,"taxes":true,"deductions":false,"ytd":true,"variance":false}');
+            }
+
+            const groupStates = JSON.parse(localStorage.getItem('payroll-compass-column-groups'));
+            Object.keys(groupStates).forEach(groupId => {
+                if (!groupStates[groupId]) {
+                    // Hide collapsed groups
+                    const groupCols = COLUMN_GROUPS[groupId].cols;
+                    groupCols.forEach(colId => {
+                        document.querySelectorAll(`[data-col="${colId}"]`).forEach(el => {
+                            el.style.display = 'none';
+                        });
+                    });
+                }
+                // Update toggle icons
+                const toggleIcon = document.getElementById(`group-toggle-${groupId}`);
+                if (toggleIcon) toggleIcon.textContent = groupStates[groupId] ? '▼' : '▶';
+            });
         }
 
         function exportCSV() {
