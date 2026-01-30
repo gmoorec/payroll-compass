@@ -208,9 +208,10 @@
         .info-icon::after {
             content: attr(data-tooltip);
             position: absolute;
-            left: 50%;
-            bottom: 120%;
-            transform: translateX(-50%);
+            left: 0;
+            top: auto;
+            bottom: calc(100% + 10px);
+            transform: none;
             background-color: #1e293b;
             color: white;
             padding: 8px 12px;
@@ -219,7 +220,7 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
-            z-index: 1000;
+            z-index: 9999;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             line-height: 1.4;
             width: 280px;
@@ -234,15 +235,16 @@
         .info-icon::before {
             content: '';
             position: absolute;
-            left: 50%;
-            bottom: 110%;
-            transform: translateX(-50%);
+            left: 20px;
+            top: auto;
+            bottom: calc(100% + 5px);
+            transform: none;
             border: 5px solid transparent;
             border-top-color: #1e293b;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
-            z-index: 1000;
+            z-index: 9999;
         }
 
         .info-icon:hover::before {
@@ -270,7 +272,7 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
-            z-index: 1000;
+            z-index: 9999;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             line-height: 1.4;
             width: 300px;
@@ -292,31 +294,14 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
-            z-index: 1000;
+            z-index: 9999;
         }
 
         .ledger-tooltip:hover::before {
             opacity: 1;
         }
 
-        /* Smart positioning for Editor tooltips - align left to prevent clipping */
-        .info-icon::after {
-            left: 0;
-            transform: translateX(0);
-        }
 
-        .info-icon::before {
-            left: 20px;
-            transform: translateX(0);
-        }
-
-        /* Increase z-index to show above other UI elements */
-        .info-icon::after,
-        .info-icon::before,
-        .ledger-tooltip::after,
-        .ledger-tooltip::before {
-            z-index: 9999 !important;
-        }
 
 
         .tax-table {
