@@ -2058,7 +2058,7 @@
             if (toggleIcon) toggleIcon.textContent = newState ? '▼' : '▶';
         }
 
-        function refresh() {
+        function exportCSV() {
             if (!entries.length && lastDecSal === 0 && lastDecGrep === 0) return alert("No Data");
             const h = ['ID', 'Date', 'Base', 'QBP', 'OT', 'Vac', 'XIII', 'Extra', 'GREP', 'Home', 'SS', 'SE', 'ISR_S', 'ISR_G', 'Ins', 'Loan1', 'Loan2', 'Loan3', 'Loan4', 'Loan5'];
             const r = entries.map(e => {
