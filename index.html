@@ -2081,6 +2081,24 @@
 
         function importCSV(inp) {
             const f = inp.files[0]; if (!f) return;
+
+            // CHECK FOR DATA COLLISION
+            if (entries.length > 0) {
+                const message = `⚠️ You have ${entries.length} entries in the ledger.\n\n` +
+                    `Choose how to import:\n` +
+                    `• OK = Replace All (clear existing)\n` +
+                    `• Cancel = Merge (keep existing + add new)`;
+
+                const userChoice = confirm(message);
+
+                if (userChoice) {
+                    // Replace: Clear existing data
+                    entries = [];
+                    nextId = 1;
+                }
+                // Else: Merge (keep existing entries)
+            }
+
             const r = new FileReader();
             r.onload = e => {
                 const l = e.target.result.split("\n");
