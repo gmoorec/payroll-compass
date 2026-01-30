@@ -1344,7 +1344,7 @@
                     start: new Date(currentYear - 1, 11, 16), // Dec 16 prev year
                     end: new Date(currentYear, 3, 15),        // April 15
                     periods: 9,
-                    salary: lastDecSalary || 0  // Start with last December if provided
+                    salary: 0  // Current year salary only (lastDecSalary added during calculation only)
                 },
                 xiii2: {
                     start: new Date(currentYear, 3, 16),      // April 16
@@ -1404,10 +1404,18 @@
                     // Use actual XIII payment
                     estimates[key] = actualXIII;
                 } else if (window.periodsWithData && window.periodsWithData > 0) {
-                    // Estimate based on data so far
-                    const avgSalaryPerPeriod = window.salary / window.periodsWithData;
-                    const projectedTotalSalary = avgSalaryPerPeriod * window.periods;
-                    estimates[key] = projectedTotalSalary / 12; // XIII formula
+                    // [FIX] For XIII.1, use total salary INCLUDING lastDecSalary for calculation
+                    // But for projection purposes, only use CURRENT YEAR data
+                    if (key === 'xiii1') {
+                        // Total salary for XIII.1 calculation (includes last Dec)
+                        const totalSalaryForXIII1 = window.salary + (lastDecSalary || 0);
+                        estimates[key] = totalSalaryForXIII1 / 12; // XIII formula
+                    } else {
+                        // For XIII.2 and XIII.3, estimate based on current year data only
+                        const avgSalaryPerPeriod = window.salary / window.periodsWithData;
+                        const projectedTotalSalary = avgSalaryPerPeriod * window.periods;
+                        estimates[key] = projectedTotalSalary / 12; // XIII formula
+                    }
                 } else if (key !== 'xiii1' && estimates.xiii1 > 0) {
                     // Use XIII.1 as baseline for future estimates (same pattern)
                     estimates[key] = estimates.xiii1;
