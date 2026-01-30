@@ -216,14 +216,13 @@
             padding: 8px 12px;
             border-radius: 6px;
             font-size: 11px;
-            white-space: nowrap;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
             z-index: 1000;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             line-height: 1.4;
-            max-width: 280px;
+            width: 280px;
             white-space: normal;
         }
 
@@ -274,7 +273,7 @@
             z-index: 1000;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             line-height: 1.4;
-            max-width: 280px;
+            width: 300px;
             white-space: normal;
         }
 
@@ -298,6 +297,25 @@
 
         .ledger-tooltip:hover::before {
             opacity: 1;
+        }
+
+        /* Smart positioning for Editor tooltips - align left to prevent clipping */
+        .info-icon::after {
+            left: 0;
+            transform: translateX(0);
+        }
+
+        .info-icon::before {
+            left: 20px;
+            transform: translateX(0);
+        }
+
+        /* Increase z-index to show above other UI elements */
+        .info-icon::after,
+        .info-icon::before,
+        .ledger-tooltip::after,
+        .ledger-tooltip::before {
+            z-index: 9999 !important;
         }
 
 
