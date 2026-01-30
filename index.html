@@ -664,10 +664,74 @@
 
             </div>
 
+            <style>
+                @keyframes highlightFade {
+                    0% {
+                        background-color: #fef08a;
+                    }
+
+                    /* yellow-200 */
+                    100% {
+                        background-color: transparent;
+                    }
+                }
+
+                .highlight-row {
+                    animation: highlightFade 2s ease-out;
+                }
+            </style>
+
             <div class="flex-1 overflow-hidden px-6 pb-6 flex flex-col">
+
+                <!-- Anomaly Alert Banner -->
+                <div id="alertBanner"
+                    class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r shadow-sm flex justify-between items-start"
+                    style="display: none;">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <span class="text-xl">⚠️</span>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-bold text-yellow-800">Attention Needed</h3>
+                            <div id="alertList" class="mt-1 text-sm text-yellow-700 space-y-1"></div>
+                        </div>
+                    </div>
+                    <div class="ml-4 flex-shrink-0 flex">
+                        <button onclick="dismissAlerts(true)"
+                            class="bg-yellow-50 px-2 py-1 rounded text-yellow-600 hover:text-yellow-800 text-xs font-bold border border-yellow-200 hover:bg-yellow-100 transition">
+                            Dismiss Forever
+                        </button>
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-lg shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
                     <div class="p-3 bg-white border-b flex justify-between items-center shrink-0">
-                        <h3 class="font-bold text-xs text-slate-700 uppercase">Granular Ledger</h3>
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-bold text-xs text-slate-700 uppercase">Granular Ledger</h3>
+
+                            <!-- Smart Navigation -->
+                            <select onchange="jumpTo(this.value); this.value='';"
+                                class="text-[10px] bg-slate-50 border border-slate-200 rounded px-2 py-0.5 text-slate-600 focus:outline-none focus:border-blue-300">
+                                <option value="">⚡ Jump to...</option>
+                                <option value="latest">Latest Entry</option>
+                                <option value="first-of-year">First Entry</option>
+                                <option value="xiii">XIII Payments (Est)</option>
+                                <optgroup label="By Month">
+                                    <option value="month-0">January</option>
+                                    <option value="month-1">February</option>
+                                    <option value="month-2">March</option>
+                                    <option value="month-3">April</option>
+                                    <option value="month-4">May</option>
+                                    <option value="month-5">June</option>
+                                    <option value="month-6">July</option>
+                                    <option value="month-7">August</option>
+                                    <option value="month-8">September</option>
+                                    <option value="month-9">October</option>
+                                    <option value="month-10">November</option>
+                                    <option value="month-11">December</option>
+                                </optgroup>
+                            </select>
+                        </div>
                         <div class="flex gap-1 flex-wrap">
                             <button onclick="toggleColumnGroup('income')"
                                 class="text-[10px] px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors"
@@ -735,6 +799,18 @@
                     <h1 class="text-2xl font-bold mb-1 text-slate-800">🧭 Payroll Compass</h1>
                     <h4 class="text-sm font-medium text-slate-500 mb-6">A private, client-side tool for validating
                         Panamanian payroll deductions.</h4>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded p-4 mb-6">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2">⚙️ Troubleshooting & Settings</h3>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-600">Re-enable anomaly detection alerts if you dismissed
+                                them:</span>
+                            <button onclick="enableAlerts()"
+                                class="bg-white border border-slate-300 px-3 py-1 rounded text-xs font-bold text-slate-700 hover:bg-slate-100 transition shadow-sm">
+                                Reset Alerts
+                            </button>
+                        </div>
+                    </div>
 
                     <h2 class="text-lg font-bold mt-6 mb-2 flex items-center"><span class="mr-2">🎯</span> The Purpose
                     </h2>
@@ -1233,7 +1309,7 @@
         // === VERSION CONTROL ===
         // Update this single constant to change the version across the entire page
         // Semantic versioning: MAJOR.MINOR.PATCH (0.4.0 = projection feature set, first stable release)
-        const VERSION = '0.5.0';
+        const VERSION = '0.6.0';
 
         const SALARY_IDS = ['inpBase', 'inpQBP', 'inpOT', 'inpVac', 'inpXIII', 'inpExtra'];
         const TAX_IDS = ['actSS', 'actSE', 'actISR', 'actISRGREP'];
@@ -1986,6 +2062,9 @@
             // Apply column group states after rendering
             applyColumnGroupStates();
 
+            // Run Anomaly Detection
+            detectAnomalies();
+
             // Show/hide Quick Fill button
             const quickFillBtn = document.getElementById('btnQuickFill');
             if (quickFillBtn) {
@@ -2138,8 +2217,21 @@
                     // Simplified: Assume columns exist if present
                     l1 = parseFloat(c[15] || 0); l2 = parseFloat(c[16] || 0); l3 = parseFloat(c[17] || 0); l4 = parseFloat(c[18] || 0); l5 = parseFloat(c[19] || 0);
 
+                    // NORMALIZE DATE TO ISO (YYYY-MM-DD)
+                    // Handle M/D/YYYY or MM/DD/YYYY from CSV/Excel
+                    let isoDate = c[1];
+                    if (isoDate.includes('/')) {
+                        const parts = isoDate.split('/'); // [M, D, YYYY]
+                        if (parts.length === 3) {
+                            const y = parts[2].trim();
+                            const m = parts[0].trim().padStart(2, '0');
+                            const d = parts[1].trim().padStart(2, '0');
+                            isoDate = `${y}-${m}-${d}`;
+                        }
+                    }
+
                     entries.push({
-                        id: newId, date: c[1], base: parseFloat(c[2]), qbp: parseFloat(c[3]), ot: parseFloat(c[4]),
+                        id: newId, date: isoDate, base: parseFloat(c[2]), qbp: parseFloat(c[3]), ot: parseFloat(c[4]),
                         vac: parseFloat(c[5]), xiii: parseFloat(c[6]), extra: parseFloat(c[7]), grep: parseFloat(c[8]), home: parseFloat(c[9]),
                         actSS: parseFloat(c[10]), actSE: parseFloat(c[11]), actISR: parseFloat(c[12]), actISRGREP: parseFloat(c[13]),
                         ins: parseFloat(c[14]), loan1: l1, loan2: l2, loan3: l3, loan4: l4, loan5: l5
@@ -2152,96 +2244,328 @@
 
         // QUICK FILL CALENDAR
         function quickFillCalendar() {
-            const sortedEntries = entries.slice().sort((a, b) => parseDate(a.date) - parseDate(b.date));
+            try {
+                // Sort entries by date
+                const sortedEntries = entries.slice().sort((a, b) => parseDate(a.date) - parseDate(b.date));
 
-            if (sortedEntries.length === 0) {
-                alert("No entries found. Add at least one pay stub first.");
-                return;
-            }
+                if (sortedEntries.length === 0) {
+                    alert("No entries found. Add at least one pay stub first.");
+                    return;
+                }
 
-            let payFrequency = 14;
+                let payFrequency = 14;
 
-            if (sortedEntries.length === 1) {
-                const freqChoice = prompt(
-                    "🗓 How often do you get paid?\n\n" +
-                    "  1 = Weekly (every 7 days)\n" +
-                    "  2 = Bi-Weekly (every 14 days) [DEFAULT]\n" +
-                    "  3 = Semi-Monthly (15th & 30th)",
-                    "2"
-                );
+                // Case 1: Single Entry - Ask User
+                if (sortedEntries.length === 1) {
+                    const freqChoice = prompt(
+                        "🗓 How often do you get paid?\n\n" +
+                        "  1 = Weekly (every 7 days)\n" +
+                        "  2 = Bi-Weekly (every 14 days) [DEFAULT]\n" +
+                        "  3 = Semi-Monthly (15th & 30th)",
+                        "2"
+                    );
 
-                if (freqChoice === "1") payFrequency = 7;
-                else if (freqChoice === "3") return quickFillSemiMonthly(sortedEntries[0]);
-                else payFrequency = 14;
-            } else {
-                const daysDiff = (parseDate(sortedEntries[1].date) - parseDate(sortedEntries[0].date)) / (1000 * 60 * 60 * 24);
-                payFrequency = Math.round(daysDiff);
-            }
+                    if (freqChoice === null) return; // Cancelled
+                    if (freqChoice === "1") payFrequency = 7;
+                    else if (freqChoice === "3") return quickFillSemiMonthly(sortedEntries[0]);
+                    else payFrequency = 14;
+                }
+                // Case 2: Autoscan - Calculate Frequency
+                else {
+                    const d1 = parseDate(sortedEntries[0].date);
+                    const d2 = parseDate(sortedEntries[1].date);
+                    const daysDiff = (d2 - d1) / (1000 * 60 * 60 * 24);
+                    payFrequency = Math.round(daysDiff);
 
-            const template = sortedEntries[0];
-            const year = parseDate(template.date).getFullYear();
-            let lastDate = parseDate(sortedEntries[sortedEntries.length - 1].date);
-            const newEntries = [];
-            let count = 0;
+                    // Sanity check for autoscan
+                    if (payFrequency < 7 || payFrequency > 31) {
+                        if (!confirm(`Detected pay frequency of ${payFrequency} days. Keep this?`)) {
+                            payFrequency = 14; // Fallback to bi-weekly
+                        }
+                    }
+                }
 
-            while (count < 30 && lastDate.getFullYear() === year) {
-                lastDate = new Date(lastDate.getTime() + payFrequency * 24 * 60 * 60 * 1000);
-                if (lastDate.getFullYear() > year) break;
+                // Templating
+                const template = sortedEntries[0];
+                const startYear = parseDate(template.date).getFullYear();
 
-                const month = lastDate.getMonth();
-                const day = lastDate.getDate();
-                const xiiiAmt = [3, 7, 11].includes(month) && Math.abs(day - 15) <= 5 ? template.base / 12 : 0;
+                // Determine start date for generation (last entry's date)
+                let lastDate = parseDate(sortedEntries[sortedEntries.length - 1].date);
 
-                newEntries.push({
-                    id: nextId++,
-                    date: ((lastDate.getMonth() + 1) + '/' + lastDate.getDate() + '/' + lastDate.getFullYear()),
-                    base: template.base, grep: template.grep, qbp: 0, ot: 0, vac: 0, xiii: xiiiAmt, extra: 0,
-                    home: template.home || 0, actSS: template.actSS, actSE: template.actSE,
-                    actISR: template.actISR, actISRGREP: template.actISRGREP, ins: template.ins || 0,
-                    loan1: 0, loan2: 0, loan3: 0, loan4: 0, loan5: 0
-                });
-                count++;
-            }
+                // Normalize to Noon to avoid DST issues
+                lastDate.setHours(12, 0, 0, 0);
 
-            if (confirm(`🚀 Add ${newEntries.length} entries? (Every ${payFrequency} days, XIII in Apr/Aug/Dec)`)) {
-                entries.push(...newEntries);
-                refresh();
-                alert(`✅ Added ${newEntries.length} entries!`);
+                const newEntries = [];
+                let count = 0;
+
+                // Generate forward
+                while (count < 52) { // Max 1 year of entries
+                    // Add frequency days
+                    lastDate = new Date(lastDate.getTime() + payFrequency * 24 * 60 * 60 * 1000);
+                    lastDate.setHours(12, 0, 0, 0); // Enforce noon
+
+                    // Stop if we went into next year
+                    if (lastDate.getFullYear() > startYear) break;
+
+                    // Create Date String (YYYY-MM-DD for consistency)
+                    // Note: Month is 0-indexed
+                    const dateStr = [
+                        lastDate.getFullYear(),
+                        String(lastDate.getMonth() + 1).padStart(2, '0'),
+                        String(lastDate.getDate()).padStart(2, '0')
+                    ].join('-');
+
+                    // Check for duplicates
+                    if (!entries.some(e => isSameDay(e.date, dateStr))) {
+                        const month = lastDate.getMonth(); // 0-11
+                        const day = lastDate.getDate();
+
+                        // XIII Logic: Apr(3), Aug(7), Dec(11) within 5 days of 15th
+                        let xiiiAmt = 0;
+                        if ([3, 7, 11].includes(month) && Math.abs(day - 15) <= 5) {
+                            xiiiAmt = template.base / 12;
+                        }
+
+                        newEntries.push({
+                            id: nextId++,
+                            date: dateStr,
+                            base: template.base, grep: template.grep, qbp: 0, ot: 0, vac: 0,
+                            xiii: xiiiAmt, extra: 0, home: template.home || 0,
+                            actSS: template.actSS, actSE: template.actSE,
+                            actISR: template.actISR, actISRGREP: template.actISRGREP,
+                            ins: template.ins || 0,
+                            loan1: 0, loan2: 0, loan3: 0, loan4: 0, loan5: 0
+                        });
+                    }
+                    count++;
+                }
+
+                if (newEntries.length === 0) {
+                    alert("No new entries were generated. Your calendar might be full for the year.");
+                    return;
+                }
+
+                if (confirm(`🚀 Generated ${newEntries.length} entries for the rest of ${startYear}.\n\nFrequency: Every ${payFrequency} days\nXIII Payments: Auto-calculated\n\nAdd them now?`)) {
+                    entries.push(...newEntries);
+                    refresh(); // Critical: Update UI
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error in Quick Fill: " + err.message);
             }
         }
 
         function quickFillSemiMonthly(template) {
-            const year = parseDate(template.date).getFullYear();
-            const newEntries = [];
+            try {
+                const year = parseDate(template.date).getFullYear();
+                const newEntries = [];
 
-            for (let month = 0; month < 12; month++) {
-                const date15 = new Date(year, month, 15);
-                const lastDay = new Date(year, month + 1, 0).getDate();
-                const date30 = new Date(year, month, Math.min(30, lastDay));
+                for (let month = 0; month < 12; month++) {
+                    // 15th of the month
+                    const date15 = new Date(year, month, 15, 12, 0, 0);
 
-                [date15, date30].forEach(d => {
-                    if (d.getTime() !== parseDate(template.date).getTime()) {
-                        const xiiiAmt = [3, 7, 11].includes(month) && d.getDate() === 15 ? template.base / 12 : 0;
-                        newEntries.push({
-                            id: nextId++,
-                            date: ((d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear()),
-                            base: template.base, grep: template.grep, qbp: 0, ot: 0, vac: 0, xiii: xiiiAmt, extra: 0,
-                            home: template.home || 0, actSS: template.actSS, actSE: template.actSE,
-                            actISR: template.actISR, actISRGREP: template.actISRGREP, ins: template.ins || 0,
-                            loan1: 0, loan2: 0, loan3: 0, loan4: 0, loan5: 0
-                        });
-                    }
-                });
-            }
+                    // Last day of the month (or 30th)
+                    const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+                    const day2 = Math.min(30, lastDayOfMonth);
+                    const dateEnd = new Date(year, month, day2, 12, 0, 0);
 
-            if (confirm(`Add ${newEntries.length} semi-monthly entries?`)) {
-                entries.push(...newEntries);
-                refresh();
-                alert(`✅ Added ${newEntries.length} entries!`);
+                    [date15, dateEnd].forEach(d => {
+                        const dateStr = [
+                            d.getFullYear(),
+                            String(d.getMonth() + 1).padStart(2, '0'),
+                            String(d.getDate()).padStart(2, '0')
+                        ].join('-');
+
+                        // Check duplications against existing entries
+                        if (!entries.some(e => isSameDay(e.date, dateStr))) {
+                            // XIII Logic: Exact 15th of Apr, Aug, Dec
+                            let xiiiAmt = 0;
+                            if ([3, 7, 11].includes(month) && d.getDate() === 15) {
+                                xiiiAmt = template.base / 12;
+                            }
+
+                            newEntries.push({
+                                id: nextId++,
+                                date: dateStr,
+                                base: template.base, grep: template.grep, qbp: 0, ot: 0, vac: 0,
+                                xiii: xiiiAmt, extra: 0, home: template.home || 0,
+                                actSS: template.actSS, actSE: template.actSE,
+                                actISR: template.actISR, actISRGREP: template.actISRGREP,
+                                ins: template.ins || 0,
+                                loan1: 0, loan2: 0, loan3: 0, loan4: 0, loan5: 0
+                            });
+                        }
+                    });
+                }
+
+                if (newEntries.length === 0) {
+                    alert("No new entries generated. Calendar might be full.");
+                    return;
+                }
+
+                if (confirm(`Add ${newEntries.length} semi-monthly entries for ${year}?`)) {
+                    entries.push(...newEntries);
+                    refresh();
+                    alert(`✅ Added ${newEntries.length} entries!`);
+                }
+            } catch (err) {
+                alert("Error: " + err.message);
             }
         }
 
+        // Helper to compare dates regardless of format (YYYY-MM-DD or MM/DD/YYYY)
+        function isSameDay(d1Str, d2Str) {
+            const d1 = parseDate(d1Str);
+            const d2 = parseDate(d2Str);
+            return d1.getFullYear() === d2.getFullYear() &&
+                d1.getMonth() === d2.getMonth() &&
+                d1.getDate() === d2.getDate();
+        }
+
         function resetSession() { if (confirm("Clear data?")) location.reload(); }
+        function jumpTo(target) {
+            if (!target) return;
+
+            // Sort entries to match table order
+            const sortedEntries = entries.slice().sort((a, b) => parseDate(a.date) - parseDate(b.date));
+            let rowIndex = -1;
+
+            if (target === 'latest') {
+                rowIndex = sortedEntries.length - 1;
+            } else if (target === 'first-of-year') {
+                // Find first entry of the current year (or just first entry)
+                if (sortedEntries.length > 0) {
+                    const currentYear = parseDate(sortedEntries[sortedEntries.length - 1].date).getFullYear();
+                    rowIndex = sortedEntries.findIndex(e => parseDate(e.date).getFullYear() === currentYear);
+                    if (rowIndex === -1) rowIndex = 0;
+                }
+            } else if (target === 'xiii') {
+                rowIndex = sortedEntries.findIndex(e => e.xiii > 0);
+            } else if (target.startsWith('month-')) {
+                const targetMonth = parseInt(target.split('-')[1]);
+                rowIndex = sortedEntries.findIndex(e => parseDate(e.date).getMonth() === targetMonth);
+            }
+
+            if (rowIndex !== -1) {
+                const row = document.querySelector(`#mainTableBody tr:nth-child(${rowIndex + 1})`);
+                if (row) {
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    row.classList.remove('highlight-row'); // Reset animation
+                    void row.offsetWidth; // Trigger reflow
+                    row.classList.add('highlight-row');
+                } else {
+                    alert("Row not found for navigation.");
+                }
+            } else {
+                alert("No matching entry found.");
+            }
+        }
+
+        // --- ANOMALY DETECTION ---
+        function detectAnomalies() {
+            if (localStorage.getItem('payroll-compass-alerts-disabled') === 'true') {
+                document.getElementById('alertBanner').style.display = 'none';
+                return;
+            }
+
+            const alerts = [];
+
+            // 1. Duplicate Detection
+            const dateGroups = {};
+            entries.forEach(e => {
+                if (!dateGroups[e.date]) dateGroups[e.date] = [];
+                const type = e.xiii > 0 ? 'xiii' : 'regular'; // Simplified type detection relative to user request
+                // Determine 'regular' if base > 0, 'xiii' if xiii > 0. Note: mixed entries theoretically possible but user treats them distinct
+                // Stronger check:
+                const types = [];
+                if (e.base > 0) types.push('regular');
+                if (e.xiii > 0) types.push('xiii');
+                if (types.length === 0) types.push('other');
+
+                dateGroups[e.date].push({ id: e.id, types: types });
+            });
+
+            Object.keys(dateGroups).forEach(date => {
+                const group = dateGroups[date];
+                let regCount = 0;
+                let xiiiCount = 0;
+
+                group.forEach(g => {
+                    if (g.types.includes('regular')) regCount++;
+                    if (g.types.includes('xiii')) xiiiCount++;
+                });
+
+                if (regCount > 1) alerts.push(`Duplicate regular salary entries detected on ${date}`);
+                if (xiiiCount > 1) alerts.push(`Duplicate XIII entries detected on ${date}`);
+            });
+
+            // Sort for sequential checks
+            const sorted = entries.slice().sort((a, b) => parseDate(a.date) - parseDate(b.date));
+
+            // 2. Missing Pay Period (Gap > 21 days)
+            for (let i = 0; i < sorted.length - 1; i++) {
+                const d1 = parseDate(sorted[i].date);
+                const d2 = parseDate(sorted[i + 1].date);
+                const diffDays = (d2 - d1) / (1000 * 60 * 60 * 24);
+
+                if (diffDays > 21) {
+                    alerts.push(`Gap of ${Math.round(diffDays)} days detected between ${sorted[i].date} and ${sorted[i + 1].date}`);
+                }
+            }
+
+            // 3. Tax Variance
+            sorted.forEach(e => {
+                const gross = e.base + e.qbp + e.ot + e.vac + e.xiii + e.extra;
+                if (gross > 0) {
+                    // SS Check: 9.75%
+                    const expSS = gross * RULES.SS;
+                    const actSS = e.actSS;
+                    const diffSS = Math.abs(actSS - expSS);
+                    const rateDiffSS = Math.abs((actSS / gross) - RULES.SS);
+
+                    if (diffSS > 5 && rateDiffSS > 0.0005) {
+                        alerts.push(`SS variance on ${e.date}: Expected ${fmt(expSS)} (${(RULES.SS * 100).toFixed(2)}%), Got ${fmt(actSS)}`);
+                    }
+
+                    // SE Check: 1.25%
+                    const expSE = gross * RULES.SE;
+                    const actSE = e.actSE;
+                    const diffSE = Math.abs(actSE - expSE);
+                    const rateDiffSE = Math.abs((actSE / gross) - RULES.SE);
+
+                    if (diffSE > 5 && rateDiffSE > 0.0005) {
+                        alerts.push(`SE variance on ${e.date}: Expected ${fmt(expSE)} (${(RULES.SE * 100).toFixed(2)}%), Got ${fmt(actSE)}`);
+                    }
+                }
+            });
+
+            renderAlerts(alerts);
+        }
+
+        function renderAlerts(alerts) {
+            const banner = document.getElementById('alertBanner');
+            const list = document.getElementById('alertList');
+
+            if (alerts.length > 0) {
+                list.innerHTML = alerts.map(a => `<div class="flex items-start"><span class="mr-1">•</span><span>${a}</span></div>`).join('');
+                banner.style.display = 'flex';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
+        function dismissAlerts(forever) {
+            document.getElementById('alertBanner').style.display = 'none';
+            if (forever) {
+                localStorage.setItem('payroll-compass-alerts-disabled', 'true');
+            }
+        }
+
+        function enableAlerts() {
+            localStorage.removeItem('payroll-compass-alerts-disabled');
+            refresh();
+            alert("✅ Alerts have been enabled. If any anomalies exist, they will appear in the banner.");
+        }
     </script>
 </body>
 
