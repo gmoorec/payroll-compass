@@ -1395,6 +1395,19 @@
             const actualXIII2 = entries.filter(e => e.xiii > 0 && parseDate(e.date) >= windows.xiii2.start && parseDate(e.date) <= windows.xiii2.end).reduce((sum, e) => sum + e.xiii, 0);
             const actualXIII3 = entries.filter(e => e.xiii > 0 && parseDate(e.date) >= windows.xiii3.start && parseDate(e.date) <= windows.xiii3.end).reduce((sum, e) => sum + e.xiii, 0);
 
+            // [NEW] Smart December payment detection
+            // If first January payment is Jan 13-14, there were 2 Dec payments (Dec 17, Dec 31)
+            // If first January payment is Jan 27-28, there was 1 Dec payment (Dec 31)
+            let decemberPaymentMultiplier = 1;
+            const firstJanEntry = entries.find(e => {
+                const eDate = parseDate(e.date);
+                return eDate.getFullYear() === currentYear && eDate.getMonth() === 0; // January
+            });
+            if (firstJanEntry && lastDecSalary > 0) {
+                const firstJanDay = parseDate(firstJanEntry.date).getDate();
+                decemberPaymentMultiplier = (firstJanDay <= 14) ? 2 : 1;
+            }
+
             // For each window, use actual if available, otherwise estimate
             ['xiii1', 'xiii2', 'xiii3'].forEach(key => {
                 const window = windows[key];
@@ -1404,17 +1417,16 @@
                     // Use actual XIII payment
                     estimates[key] = actualXIII;
                 } else if (window.periodsWithData && window.periodsWithData > 0) {
-                    // [FIX] For XIII.1, use total salary INCLUDING lastDecSalary for calculation
-                    // But for projection purposes, only use CURRENT YEAR data
+                    // Estimate based on current year data
+                    const avgSalaryPerPeriod = window.salary / window.periodsWithData;
+                    const projectedTotalSalary = avgSalaryPerPeriod * window.periods;
+
+                    // [NEW] For XIII.1, add December contribution with smart multiplier
                     if (key === 'xiii1') {
-                        // Total salary for XIII.1 calculation (includes last Dec)
-                        const totalSalaryForXIII1 = window.salary + (lastDecSalary || 0);
-                        estimates[key] = totalSalaryForXIII1 / 12; // XIII formula
+                        const decContribution = (lastDecSalary || 0) * decemberPaymentMultiplier;
+                        estimates[key] = (projectedTotalSalary + decContribution) / 12;
                     } else {
-                        // For XIII.2 and XIII.3, estimate based on current year data only
-                        const avgSalaryPerPeriod = window.salary / window.periodsWithData;
-                        const projectedTotalSalary = avgSalaryPerPeriod * window.periods;
-                        estimates[key] = projectedTotalSalary / 12; // XIII formula
+                        estimates[key] = projectedTotalSalary / 12;
                     }
                 } else if (key !== 'xiii1' && estimates.xiii1 > 0) {
                     // Use XIII.1 as baseline for future estimates (same pattern)
