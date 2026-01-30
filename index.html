@@ -1332,9 +1332,10 @@
          *   XIII.3: August 16 → December 15 (8 biweekly periods)
          * @param {Array} entries - Array of pay stub entries
          * @param {number} lastDecSalary - Last year's December salary for XIII.1 calculation
-         * @returns {Object} Estimated XIII payments: { xiii1, xiii2, xiii3, total }
+         * @param {number} lastDecGrep - Last year's December GREP for XIII.1 calculation
+         * @returns {Object} Estimated XIII payments for salary and GREP
          */
-        function estimateXIII(entries, lastDecSalary) {
+        function estimateXIII(entries, lastDecSalary, lastDecGrep) {
             // Get current year from entries
             const currentYear = entries.length > 0 ? parseDate(entries[0].date).getFullYear() : new Date().getFullYear();
 
@@ -1344,19 +1345,22 @@
                     start: new Date(currentYear - 1, 11, 16), // Dec 16 prev year
                     end: new Date(currentYear, 3, 15),        // April 15
                     periods: 9,
-                    salary: 0  // Current year salary only (lastDecSalary added during calculation only)
+                    salary: 0,  // Current year salary only
+                    grep: 0     // Current year GREP only
                 },
                 xiii2: {
                     start: new Date(currentYear, 3, 16),      // April 16
                     end: new Date(currentYear, 7, 15),        // August 15
                     periods: 9,
-                    salary: 0
+                    salary: 0,
+                    grep: 0
                 },
                 xiii3: {
                     start: new Date(currentYear, 7, 16),      // August 16
                     end: new Date(currentYear, 11, 15),       // December 15
                     periods: 8,
-                    salary: 0
+                    salary: 0,
+                    grep: 0
                 }
             };
 
@@ -1365,47 +1369,53 @@
             entries.forEach(e => {
                 const eDate = parseDate(e.date);
                 const xiiiSalary = e.base + e.ot + e.vac; // XIII base (excludes QBP, extra, XIII itself)
+                const xiiiGrep = e.grep; // GREP for XIII
 
                 if (!dateMap.has(e.date)) {
-                    dateMap.set(e.date, { date: eDate, salary: 0 });
+                    dateMap.set(e.date, { date: eDate, salary: 0, grep: 0 });
                 }
                 dateMap.get(e.date).salary += xiiiSalary;
+                dateMap.get(e.date).grep += xiiiGrep;
             });
 
             // Process each entry and assign to windows
-            dateMap.forEach(({ date, salary }) => {
+            dateMap.forEach(({ date, salary, grep }) => {
                 // Check which XIII window this date falls into
                 if (date >= windows.xiii1.start && date <= windows.xiii1.end) {
                     windows.xiii1.salary += salary;
+                    windows.xiii1.grep += grep;
                     windows.xiii1.periodsWithData = (windows.xiii1.periodsWithData || 0) + 1;
                 } else if (date >= windows.xiii2.start && date <= windows.xiii2.end) {
                     windows.xiii2.salary += salary;
+                    windows.xiii2.grep += grep;
                     windows.xiii2.periodsWithData = (windows.xiii2.periodsWithData || 0) + 1;
                 } else if (date >= windows.xiii3.start && date <= windows.xiii3.end) {
                     windows.xiii3.salary += salary;
+                    windows.xiii3.grep += grep;
                     windows.xiii3.periodsWithData = (windows.xiii3.periodsWithData || 0) + 1;
                 }
             });
 
-            // Estimate XIII for each window
-            const estimates = { xiii1: 0, xiii2: 0, xiii3: 0, total: 0 };
+            // Estimate XIII for each window - separate for salary and GREP
+            const salaryEstimates = { xiii1: 0, xiii2: 0, xiii3: 0, total: 0 };
+            const grepEstimates = { xiii1: 0, xiii2: 0, xiii3: 0, total: 0 };
 
             // Check if actual XIII payments exist
             const actualXIII1 = entries.filter(e => e.xiii > 0 && parseDate(e.date) >= windows.xiii1.start && parseDate(e.date) <= windows.xiii1.end).reduce((sum, e) => sum + e.xiii, 0);
             const actualXIII2 = entries.filter(e => e.xiii > 0 && parseDate(e.date) >= windows.xiii2.start && parseDate(e.date) <= windows.xiii2.end).reduce((sum, e) => sum + e.xiii, 0);
             const actualXIII3 = entries.filter(e => e.xiii > 0 && parseDate(e.date) >= windows.xiii3.start && parseDate(e.date) <= windows.xiii3.end).reduce((sum, e) => sum + e.xiii, 0);
 
-            // [NEW] Smart December payment detection
-            // If first January payment is Jan 13-14, there were 2 Dec payments (Dec 17, Dec 31)
-            // If first January payment is Jan 27-28, there was 1 Dec payment (Dec 31)
+            // [NEW] Smart December payment detection (applies to both salary and GREP)
+            // If first January payment is Jan 13-15, there were 2 Dec payments (Dec 17, Dec 31)
+            // If first January payment is outside this range, there was 1 Dec payment
             let decemberPaymentMultiplier = 1;
             const firstJanEntry = entries.find(e => {
                 const eDate = parseDate(e.date);
                 return eDate.getFullYear() === currentYear && eDate.getMonth() === 0; // January
             });
-            if (firstJanEntry && lastDecSalary > 0) {
+            if (firstJanEntry && (lastDecSalary > 0 || lastDecGrep > 0)) {
                 const firstJanDay = parseDate(firstJanEntry.date).getDate();
-                decemberPaymentMultiplier = (firstJanDay <= 14) ? 2 : 1;
+                decemberPaymentMultiplier = (firstJanDay >= 13 && firstJanDay <= 15) ? 2 : 1;
             }
 
             // For each window, use actual if available, otherwise estimate
@@ -1414,28 +1424,42 @@
                 const actualXIII = key === 'xiii1' ? actualXIII1 : key === 'xiii2' ? actualXIII2 : actualXIII3;
 
                 if (actualXIII > 0) {
-                    // Use actual XIII payment
-                    estimates[key] = actualXIII;
+                    // Use actual XIII payment (split between salary and GREP proportionally)
+                    // For simplicity, assume it's all salary for now (GREP XIII is rare)
+                    salaryEstimates[key] = actualXIII;
                 } else if (window.periodsWithData && window.periodsWithData > 0) {
-                    // Estimate based on current year data
+                    // SALARY estimation
                     const avgSalaryPerPeriod = window.salary / window.periodsWithData;
                     const projectedTotalSalary = avgSalaryPerPeriod * window.periods;
 
-                    // [NEW] For XIII.1, add December contribution with smart multiplier
                     if (key === 'xiii1') {
-                        const decContribution = (lastDecSalary || 0) * decemberPaymentMultiplier;
-                        estimates[key] = (projectedTotalSalary + decContribution) / 12;
+                        const decSalaryContribution = (lastDecSalary || 0) * decemberPaymentMultiplier;
+                        salaryEstimates[key] = (projectedTotalSalary + decSalaryContribution) / 12;
                     } else {
-                        estimates[key] = projectedTotalSalary / 12;
+                        salaryEstimates[key] = projectedTotalSalary / 12;
                     }
-                } else if (key !== 'xiii1' && estimates.xiii1 > 0) {
+
+                    // GREP estimation
+                    const avgGrepPerPeriod = window.grep / window.periodsWithData;
+                    const projectedTotalGrep = avgGrepPerPeriod * window.periods;
+
+                    if (key === 'xiii1') {
+                        const decGrepContribution = (lastDecGrep || 0) * decemberPaymentMultiplier;
+                        grepEstimates[key] = (projectedTotalGrep + decGrepContribution) / 12;
+                    } else {
+                        grepEstimates[key] = projectedTotalGrep / 12;
+                    }
+                } else if (key !== 'xiii1' && salaryEstimates.xiii1 > 0) {
                     // Use XIII.1 as baseline for future estimates (same pattern)
-                    estimates[key] = estimates.xiii1;
+                    salaryEstimates[key] = salaryEstimates.xiii1;
+                    grepEstimates[key] = grepEstimates.xiii1;
                 }
             });
 
-            estimates.total = estimates.xiii1 + estimates.xiii2 + estimates.xiii3;
-            return estimates;
+            salaryEstimates.total = salaryEstimates.xiii1 + salaryEstimates.xiii2 + salaryEstimates.xiii3;
+            grepEstimates.total = grepEstimates.xiii1 + grepEstimates.xiii2 + grepEstimates.xiii3;
+
+            return { sal: salaryEstimates, grep: grepEstimates };
         }
 
         /**
@@ -1465,8 +1489,8 @@
             let ytdSSGrep = 0; // For SS calculation (GREP)
             let ytdSEBase = 0;  // For SE calculation
 
-            // [NEW] Estimate XIII payments for the year
-            const xiiiEstimates = estimateXIII(entries, lastDecSal);
+            // [NEW] Estimate XIII payments for the year (salary and GREP)
+            const xiiiEstimates = estimateXIII(entries, lastDecSal, lastDecGrep);
 
             // [FIX] Track unique pay dates to count actual pay periods
             const uniqueDates = new Set();
@@ -1503,9 +1527,10 @@
                 // Calculate projected annual taxes
                 // [NEW] Use ESTIMATED XIII total for smooth distribution, not just actual
                 // This distributes expected XIII tax burden evenly across the year
-                const estimatedXIIIForProjection = xiiiEstimates.total;
+                const estimatedXIIIForProjection = xiiiEstimates.sal.total;
+                const estimatedGREPXIIIForProjection = xiiiEstimates.grep.total;
                 const projAnnualISR_SAL = getTax(projYearEndSalary + estimatedXIIIForProjection, RULES.ISR_SAL);
-                const projAnnualISR_GREP = getTax(projYearEndGREP, RULES.ISR_GREP);
+                const projAnnualISR_GREP = getTax(projYearEndGREP + estimatedGREPXIIIForProjection, RULES.ISR_GREP);
                 const projAnnualSS = (projYearEndSSBase * RULES.SS) + (projYearEndSSGrep * RULES.SS_GREP);
                 const projAnnualSE = projYearEndSEBase * RULES.SE;
 
