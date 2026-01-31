@@ -765,7 +765,7 @@
                         <table class="w-full text-left border-collapse" id="mainTable">
                             <thead class="sticky top-0 z-20 shadow-sm">
                             </thead>
-                            <tbody class="divide-y divide-slate-100 bg-white">
+                            <tbody class="divide-y divide-slate-100 bg-white" id="mainTableBody">
                             </tbody>
                         </table>
                     </div>
@@ -1301,6 +1301,7 @@
 
         // --- CONFIG ---
         let entries = [];
+        let nextId = 1;
         let chartSalInstance = null;
         let chartGrepInstance = null;
         let editingId = null;
@@ -2003,31 +2004,49 @@
             document.getElementById('kpiCFSal').innerText = '$' + fmt(ytd.grossSal); document.getElementById('kpiCFGrep').innerText = '$' + fmt(ytd.grepTotal); document.getElementById('kpiCFHome').innerText = '$' + fmt(ytd.homeTotal); document.getElementById('kpiCFTotal').innerText = '$' + fmt(ytd.grossSal + ytd.grepTotal + ytd.homeTotal);
             document.getElementById('kpiCFTax').innerText = '-$' + fmt(ytd.totalTax); document.getElementById('kpiCFDed').innerText = '-$' + fmt(ytd.totalDed); document.getElementById('kpiCFNet').innerText = '$' + fmt(ytd.net);
 
-            // XIII Smart Logic
+            // XIII Smart Logic (Simplified Projection)
             const editorDateVal = document.getElementById('entryDate').value; let referenceDate = new Date(); if (editorDateVal) referenceDate = parseDate(editorDateVal);
             const m = referenceDate.getMonth(); const d = referenceDate.getDate(); const year = referenceDate.getFullYear();
-            let xiiiStart, xiiiEnd, currentPeriod;
-            if (m < 3 || (m === 3 && d <= 15)) { currentPeriod = "APRIL (1st)"; xiiiStart = new Date(year - 1, 11, 16); xiiiEnd = new Date(year, 3, 15); }
-            else if (m < 7 || (m === 7 && d <= 15)) { currentPeriod = "AUGUST (2nd)"; xiiiStart = new Date(year, 3, 16); xiiiEnd = new Date(year, 7, 15); }
-            else { currentPeriod = "DECEMBER (3rd)"; xiiiStart = new Date(year, 7, 16); xiiiEnd = new Date(year, 11, 15); }
 
-            let xiiiSalSum = 0; let xiiiGrepSum = 0; let entryCountInWindow = 0; let firstEntryDate = null;
-            if (currentPeriod === "APRIL (1st)") { xiiiSalSum += lastDecSal; xiiiGrepSum += lastDecGrep; }
-            entries.forEach(e => {
-                const eDate = parseDate(e.date); if (eDate >= xiiiStart && eDate <= xiiiEnd) {
-                    xiiiSalSum += (e.base + e.ot + e.vac + e.extra);
-                    if (e.xiii > 0) { } else { xiiiGrepSum += e.grep; }
-                    entryCountInWindow++; if (!firstEntryDate || eDate < firstEntryDate) firstEntryDate = eDate;
-                }
-            });
+            let currentPeriod;
+            if (m < 3 || (m === 3 && d <= 15)) { currentPeriod = "APRIL (1st)"; }
+            else if (m < 7 || (m === 7 && d <= 15)) { currentPeriod = "AUGUST (2nd)"; }
+            else { currentPeriod = "DECEMBER (3rd)"; }
 
-            // Smart Projection
-            let isProjected = false;
-            if (currentPeriod === "APRIL (1st)" && lastDecSal === 0 && entryCountInWindow > 0) {
-                const windowStart = new Date(year - 1, 11, 16); const daysDiff = (firstEntryDate - windowStart) / (1000 * 60 * 60 * 24);
-                if (daysDiff > 10) { const missingChecks = Math.floor(daysDiff / 14); if (missingChecks > 0) { const avgSal = xiiiSalSum / entryCountInWindow; const avgGrep = xiiiGrepSum / entryCountInWindow; xiiiSalSum += (avgSal * missingChecks); xiiiGrepSum += (avgGrep * missingChecks); isProjected = true; } }
+            // Project Annual Salary based on latest entry or average
+            // If we have entries, take the base from the last entry and multiply by total pay periods (26 normally)
+            let projectedAnnualBase = 0;
+            let projectedAnnualGrep = 0;
+            let totalPeriods = parseFloat(document.getElementById('inpTotalPeriods').value) || 26;
+
+            // Check if we have entries to base projection on
+            if (entries.length > 0) {
+                // Sort to identify latest entry by date
+                const sortedForProj = entries.slice().sort((a, b) => parseDate(a.date) - parseDate(b.date));
+                const latest = sortedForProj[sortedForProj.length - 1]; // Use latest entry for projection
+                projectedAnnualBase = (latest.base + latest.ot + latest.vac + latest.extra) * totalPeriods; // Annualize 'Regular' income
+                projectedAnnualGrep = latest.grep * totalPeriods;
             }
-            document.getElementById('kpiXIIIVal').innerText = '$' + fmt(xiiiSalSum / 12); document.getElementById('kpiXIIIGrepVal').innerText = '$' + fmt(xiiiGrepSum / 12); document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} ${isProjected ? '(Projected)' : 'Est.'}`;
+
+            const projectedTotalXIII = projectedAnnualBase / 12;
+            const projectedTotalXIIIGrep = projectedAnnualGrep / 12;
+
+            // Calculate Installment based on Period Weight
+            // April: 9/26 (~0.3462), August: 9/26 (~0.3462), Dec: 8/26 (~0.3076)
+            // Weights logic:
+            let weight = 0;
+            if (currentPeriod.includes("APRIL") || currentPeriod.includes("AUGUST")) {
+                weight = 9 / 26;
+            } else {
+                weight = 8 / 26;
+            }
+
+            const estXIII = projectedTotalXIII * weight;
+            const estXIIIGrep = projectedTotalXIIIGrep * weight;
+
+            document.getElementById('kpiXIIIVal').innerText = '$' + fmt(estXIII);
+            document.getElementById('kpiXIIIGrepVal').innerText = '$' + fmt(estXIIIGrep);
+            document.getElementById('kpiXIIIStatus').innerText = `${currentPeriod} (Projected)`;
 
             // Ded/Charts
             const totalIns = entries.reduce((s, e) => s + e.ins, 0); const totalLoans = entries.reduce((s, e) => s + e.loan1 + e.loan2 + e.loan3 + e.loan4 + e.loan5, 0); const totalOther = totalIns + totalLoans;
@@ -2327,7 +2346,7 @@
                         }
 
                         newEntries.push({
-                            id: nextId++,
+                            id: generateID(),
                             date: dateStr,
                             base: template.base, grep: template.grep, qbp: 0, ot: 0, vac: 0,
                             xiii: xiiiAmt, extra: 0, home: template.home || 0,
@@ -2385,7 +2404,7 @@
                             }
 
                             newEntries.push({
-                                id: nextId++,
+                                id: generateID(),
                                 date: dateStr,
                                 base: template.base, grep: template.grep, qbp: 0, ot: 0, vac: 0,
                                 xiii: xiiiAmt, extra: 0, home: template.home || 0,
@@ -2437,7 +2456,7 @@
                 if (sortedEntries.length > 0) {
                     const currentYear = parseDate(sortedEntries[sortedEntries.length - 1].date).getFullYear();
                     rowIndex = sortedEntries.findIndex(e => parseDate(e.date).getFullYear() === currentYear);
-                    if (rowIndex === -1) rowIndex = 0;
+                    if (rowIndex === -1) rowIndex = 0; // Fallback to first entry if no current year entries found
                 }
             } else if (target === 'xiii') {
                 rowIndex = sortedEntries.findIndex(e => e.xiii > 0);
@@ -2515,26 +2534,38 @@
 
             // 3. Tax Variance
             sorted.forEach(e => {
-                const gross = e.base + e.qbp + e.ot + e.vac + e.xiii + e.extra;
-                if (gross > 0) {
-                    // SS Check: 9.75%
-                    const expSS = gross * RULES.SS;
+                const gross = e.base + e.qbp + e.ot + e.vac + e.xiii + e.extra; // Regular Gross + XIII
+
+                // SS Logic: Weighted Average
+                // Regular (Base+OT+Vac+Extra) @ 9.75%
+                // GREP @ 9.00%
+                // XIII @ 7.25%
+
+                const regGross = e.base + e.qbp + e.ot + e.vac + e.extra;
+                const xiiiGross = e.xiii;
+                const grepGross = e.grep;
+
+                if (regGross + xiiiGross + grepGross > 0) {
+                    const expSS = (regGross * 0.0975) + (grepGross * 0.09) + (xiiiGross * 0.0725);
                     const actSS = e.actSS;
                     const diffSS = Math.abs(actSS - expSS);
-                    const rateDiffSS = Math.abs((actSS / gross) - RULES.SS);
 
-                    if (diffSS > 5 && rateDiffSS > 0.0005) {
-                        alerts.push(`SS variance on ${e.date}: Expected ${fmt(expSS)} (${(RULES.SS * 100).toFixed(2)}%), Got ${fmt(actSS)}`);
+                    if (diffSS > 5) {
+                        alerts.push(`SS variance on ${e.date}: Expected ${fmt(expSS)}, Got ${fmt(actSS)}`);
                     }
 
-                    // SE Check: 1.25%
-                    const expSE = gross * RULES.SE;
+                    // SE Check: 1.25% on (Base + OT + Vac + Extra) - Excludes GREP and XIII?
+                    // User Rule: "Educational Tax: 1.25% on Base + Overtime + Vacation + Extra (excludes GREP, Home, Bonuses)"
+                    // Wait, QBP implies bonus. The tooltip says "excludes Bonuses".
+                    // Assuming e.qbp is bonus. So just Base+OT+Vac+Extra?
+                    // Let's stick to the user provided tooltip definition: "Base + Overtime + Vacation + Extra"
+                    const seBase = e.base + e.ot + e.vac + e.extra;
+                    const expSE = seBase * 0.0125;
                     const actSE = e.actSE;
                     const diffSE = Math.abs(actSE - expSE);
-                    const rateDiffSE = Math.abs((actSE / gross) - RULES.SE);
 
-                    if (diffSE > 5 && rateDiffSE > 0.0005) {
-                        alerts.push(`SE variance on ${e.date}: Expected ${fmt(expSE)} (${(RULES.SE * 100).toFixed(2)}%), Got ${fmt(actSE)}`);
+                    if (diffSE > 5) {
+                        alerts.push(`SE variance on ${e.date}: Expected ${fmt(expSE)}, Got ${fmt(actSE)}`);
                     }
                 }
             });
@@ -2545,12 +2576,38 @@
         function renderAlerts(alerts) {
             const banner = document.getElementById('alertBanner');
             const list = document.getElementById('alertList');
+            const expandBtnId = 'alertExpandBtn';
 
             if (alerts.length > 0) {
-                list.innerHTML = alerts.map(a => `<div class="flex items-start"><span class="mr-1">•</span><span>${a}</span></div>`).join('');
+                // Initial display: First 3 alerts
+                const visibleAlerts = alerts.slice(0, 3);
+                const hiddenCount = alerts.length - 3;
+
+                let html = visibleAlerts.map(a => `<div class="flex items-start"><span class="mr-1">•</span><span>${a}</span></div>`).join('');
+
+                if (hiddenCount > 0) {
+                    html += `<div id="hiddenAlerts" style="display:none;" class="mt-1 space-y-1">` +
+                        alerts.slice(3).map(a => `<div class="flex items-start"><span class="mr-1">•</span><span>${a}</span></div>`).join('') +
+                        `</div>`;
+                    html += `<button id="${expandBtnId}" onclick="toggleAlertExpansion()" class="text-xs text-yellow-600 font-bold hover:text-yellow-800 hover:underline mt-1 focus:outline-none">Show ${hiddenCount} more...</button>`;
+                }
+
+                list.innerHTML = html;
                 banner.style.display = 'flex';
             } else {
                 banner.style.display = 'none';
+            }
+        }
+
+        function toggleAlertExpansion() {
+            const hiddenDiv = document.getElementById('hiddenAlerts');
+            const btn = document.getElementById('alertExpandBtn');
+            if (hiddenDiv.style.display === 'none') {
+                hiddenDiv.style.display = 'block';
+                btn.innerText = 'Show Less';
+            } else {
+                hiddenDiv.style.display = 'none';
+                btn.innerText = 'Show More...';
             }
         }
 
