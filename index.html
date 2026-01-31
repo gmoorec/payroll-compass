@@ -715,7 +715,13 @@
                                 <option value="">⚡ Jump to...</option>
                                 <option value="latest">Latest Entry</option>
                                 <option value="first-of-year">First Entry</option>
-                                <option value="xiii">XIII Payments (Est)</option>
+                                <option value="xiii">XIII Payments</option>
+                                <option value="qbp">QBP Entry</option>
+                                <optgroup label="XIII Installments">
+                                    <option value="xiii-1">XIII.1 (April)</option>
+                                    <option value="xiii-2">XIII.2 (August)</option>
+                                    <option value="xiii-3">XIII.3 (December)</option>
+                                </optgroup>
                                 <optgroup label="By Month">
                                     <option value="month-0">January</option>
                                     <option value="month-1">February</option>
@@ -2341,14 +2347,37 @@
 
                         // XIII Logic: Apr(3), Aug(7), Dec(11) within 5 days of 15th
                         let xiiiAmt = 0;
+                        let grepAmt = template.grep;
+                        let baseAmt = template.base;
+                        let otAmt = 0; let vacAmt = 0; let extraAmt = 0;
+
+                        // Refined Logic based on User Request:
+                        // XIII entries should NEVER have base salary.
+                        // It should be purely XIII and GREP components distibuted.
+
                         if ([3, 7, 11].includes(month) && Math.abs(day - 15) <= 5) {
-                            xiiiAmt = template.base / 12;
+                            // This is likely a XIII Month payment slot
+                            // We need to know TOTAL pay periods. defaulting to 26 for bi-weekly.
+                            const annualBase = (template.base + template.ot + template.vac + template.extra) * 26;
+                            const annualGrep = template.grep * 26;
+
+                            const totalXIII = annualBase / 12;
+                            const totalGrepXIII = annualGrep / 12; // GREP for XIII
+
+                            // Dec gets 0.3076, others 0.3462
+                            const weight = month === 11 ? 0.3076 : 0.3462;
+
+                            xiiiAmt = totalXIII * weight;
+                            grepAmt = totalGrepXIII * weight; // This is the GREP part of XIII
+
+                            baseAmt = 0; // XIII entries have no base
+                            // No other components
                         }
 
                         newEntries.push({
                             id: generateID(),
                             date: dateStr,
-                            base: template.base, grep: template.grep, qbp: 0, ot: 0, vac: 0,
+                            base: baseAmt, grep: grepAmt, qbp: 0, ot: 0, vac: 0,
                             xiii: xiiiAmt, extra: 0, home: template.home || 0,
                             actSS: template.actSS, actSE: template.actSE,
                             actISR: template.actISR, actISRGREP: template.actISRGREP,
@@ -2460,6 +2489,17 @@
                 }
             } else if (target === 'xiii') {
                 rowIndex = sortedEntries.findIndex(e => e.xiii > 0);
+            } else if (target === 'qbp') {
+                rowIndex = sortedEntries.findIndex(e => e.qbp > 0);
+            } else if (target === 'xiii-1') {
+                // Find April XIII (Month 3)
+                rowIndex = sortedEntries.findIndex(e => e.xiii > 0 && parseDate(e.date).getMonth() === 3);
+            } else if (target === 'xiii-2') {
+                // Find August XIII (Month 7)
+                rowIndex = sortedEntries.findIndex(e => e.xiii > 0 && parseDate(e.date).getMonth() === 7);
+            } else if (target === 'xiii-3') {
+                // Find December XIII (Month 11)
+                rowIndex = sortedEntries.findIndex(e => e.xiii > 0 && parseDate(e.date).getMonth() === 11);
             } else if (target.startsWith('month-')) {
                 const targetMonth = parseInt(target.split('-')[1]);
                 rowIndex = sortedEntries.findIndex(e => parseDate(e.date).getMonth() === targetMonth);
@@ -2566,6 +2606,26 @@
 
                     if (diffSE > 5) {
                         alerts.push(`SE variance on ${e.date}: Expected ${fmt(expSE)}, Got ${fmt(actSE)}`);
+                    }
+
+                    // ISR Salary Check
+                    // Check if actISR is > 0 when annualized salary > 11k (simplified check)
+                    const annualized = regGross * 26;
+                    if (annualized > 11000 && e.actISR === 0 && regGross > 0) {
+                        alerts.push(`Potential missing ISR Salary on ${e.date} (Annualized > $11k)`);
+                    }
+
+                    // ISR GREP Check
+                    // GREP tax logic: 0-25k (10%), 25k+ (15%)
+                    if (e.grep > 0) {
+                        const annualizedGrep = e.grep * 26;
+                        const expRate = annualizedGrep > 25000 ? 0.15 : 0.10;
+                        const expIsrGrep = e.grep * expRate; // Approx per pay period
+
+                        // If variance > $5
+                        if (Math.abs(e.actISRGREP - expIsrGrep) > 5) {
+                            alerts.push(`ISR GREP variance on ${e.date}: Expected ~$${fmt(expIsrGrep)}, Got ${fmt(e.actISRGREP)}`);
+                        }
                     }
                 }
             });
